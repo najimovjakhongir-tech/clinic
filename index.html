@@ -90,6 +90,7 @@ background:color-mix(in srgb,var(--c) 42%,var(--surface));border:1px solid var(-
 .tabs button[aria-disabled="true"]{opacity:.4;cursor:not-allowed}
 .grp{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 12px 14px;margin-bottom:12px}
 .dtb{margin-top:10px}.grp.disc .n.neg{color:var(--danger)}
+#stm .stm-del{color:var(--danger);border-top:1px solid var(--line);margin-top:4px}
 .grp h3{margin:0 0 2px;font-size:16px;color:var(--accent)}
 .grp h4{margin:14px 0 6px;font-size:14px;font-weight:600}
 .grp .hint{margin:0 0 8px;font-size:13px;color:var(--mute)}
@@ -1236,13 +1237,16 @@ function stmOpen(btn){
   stmClose();
   var el=btn.closest(".ap"),a=appts.filter(function(x){return x.id==el.dataset.id})[0];if(!a)return;
   var m=document.createElement("div");m.id="stm";m.setAttribute("role","menu");
-  m.innerHTML=STAT.map(function(x){return '<button type="button" role="menuitem" data-st="'+x[0]+'" aria-pressed="'+(statOf(a)[0]===x[0])+'" style="--sc:'+x[2]+'"><i></i>'+x[1]+'</button>'}).join("");
+  m.innerHTML=STAT.map(function(x){return '<button type="button" role="menuitem" data-st="'+x[0]+'" aria-pressed="'+(statOf(a)[0]===x[0])+'" style="--sc:'+x[2]+'"><i></i>'+x[1]+'</button>'}).join("")+(can("appt_del")?'<button type="button" role="menuitem" class="stm-del" data-delv="1">Удалить визит</button>':'');
   document.body.appendChild(m);
   var z=dgZoom(),r=btn.getBoundingClientRect(),mr=m.getBoundingClientRect(),h=mr.height,w=mr.width,vw=document.documentElement.clientWidth||innerWidth,top=Math.max(8,Math.min(r.top+r.height/2-h/2,innerHeight-h-8)),left=r.left-w-8;if(left<8)left=r.right+8;if(left+w>vw-8)left=Math.max(8,vw-w-8);
   m.style.top=(top/z)+"px";m.style.left=(left/z)+"px";
   m.addEventListener("click",function(ev){
+    var dv=ev.target.closest("[data-delv]");
+    if(dv){arm(dv,"Точно удалить?",function(){appts=appts.filter(function(x){return x!==a});save();stmClose();render();toast("Визит удалён")});return}
     var b=ev.target.closest("[data-st]");if(!b)return;
     a.status=b.dataset.st==="plan"?undefined:b.dataset.st;save();stmClose();render()})}
+document.addEventListener("contextmenu",function(e){var ap=e.target.closest(".ap");if(!ap||DG)return;var t=ap.querySelector(".stt");if(!t)return;e.preventDefault();stmOpen(t)});
 document.addEventListener("click",function(e){if($("stm")&&!e.target.closest("#stm")&&!e.target.closest(".stt"))stmClose()},true);
 
 /* ---------- перенос записи перетаскиванием ---------- */
