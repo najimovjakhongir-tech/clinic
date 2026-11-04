@@ -904,6 +904,7 @@ body.dg-on{cursor:grabbing;-webkit-user-select:none;user-select:none}
           </div>
         </div>
         </details>
+        <div class="acts" style="margin-top:6px"><button type="button" class="danger" id="del2">Удалить этот визит</button></div>
       </section>
 
       <!-- Анкета -->
@@ -954,6 +955,7 @@ body.dg-on{cursor:grabbing;-webkit-user-select:none;user-select:none}
             <div class="full"><label for="i-note">Заметки врача</label><textarea id="i-note" data-k="note"></textarea></div>
           </div>
         </div>
+        <div class="acts" style="margin-top:10px"><button type="button" class="danger" id="pt-del">Удалить пациента</button></div>
       </section>
 
       <!-- Лечение -->
@@ -1657,7 +1659,7 @@ function openCard(a){
   $("v-pat-wrap").hidden=!isNew;$("v-patname").hidden=isNew;
   $("v-pat").value="";$("v-patname").textContent=curP?curP.name:"";
   $("dl-patients").innerHTML=patients.map(function(p){return '<option value="'+esc(p.name)+'">'}).join("");
-  hid($("del"),isNew||!can("appt_del"));$("err").textContent="";$("v-form").open=isNew;$("v-form").classList.toggle("new",isNew);
+  hid($("del"),isNew||!can("appt_del"));hid($("del2"),isNew||!can("appt_del"));hid($("pt-del"),isNew||!curP||!can("appt_del"));$("err").textContent="";$("v-form").open=isNew;$("v-form").classList.toggle("new",isNew);
   draft=a?(a.comments||[]).slice():[];$("f-cm").value="";
   opts($("f-au"),authorList().map(function(x){return[x,x]}),lastAuthor());renderCm();
   opts($("i-source"),[["","Не указан"]].concat(SOURCES.map(function(x){return[x,x]})),"");
@@ -2065,6 +2067,14 @@ $("cm-list").addEventListener("click",function(e){
 $("del").onclick=function(){
   arm($("del"),"Точно удалить?",function(){
     appts=appts.filter(function(a){return a!==cur});save();closeCard();render()})};
+$("del2").onclick=function(){
+  if(!cur)return;arm($("del2"),"Точно удалить визит?",function(){
+    appts=appts.filter(function(a){return a!==cur});save();closeCard();render();toast("Визит удалён")})};
+$("pt-del").onclick=function(){
+  if(!curP)return;var p=curP,n=appts.filter(function(a){return a.pid===p.id}).length;
+  arm($("pt-del"),"Удалить пациента и визиты ("+n+")?",function(){
+    appts=appts.filter(function(a){return a.pid!==p.id});patients=patients.filter(function(x){return x.id!==p.id});save();savePts();
+    closeCard();render();if(!$("pl").hidden)plDraw();toast("Пациент удалён")})};
 $("save").onclick=function(){
   var name=isNew?$("v-pat").value.trim():curP.name;
   var rid=$("f-room").value,s=+$("f-start").value,d=+$("f-dur").value;
@@ -2096,7 +2106,7 @@ function applyPerms(){
   hid(tf,!can("fin_view"));hid(tp,!can("plan_view"));
   hid($("fq-quick").parentNode,!can("fin_pay"));
   hid($("save"),!can("appt_edit"));hid($("repbtn"),!can("reports"));
-  if(!isNew)hid($("del"),!can("appt_del"));
+  if(!isNew){hid($("del"),!can("appt_del"));hid($("del2"),!can("appt_del"));hid($("pt-del"),!curP||!can("appt_del"))}
   if(!$("card").hidden&&((tab==="fin"&&!can("fin_view"))||(tab==="plan"&&!can("plan_view"))))showTab("visit")}
 /* ---------- Настройки: кабинеты и сотрудники ---------- */
 var SPT="acc";
