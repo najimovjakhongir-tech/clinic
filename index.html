@@ -3098,13 +3098,92 @@ async function backup(){
     m.textContent="Копия сохранена: "+name+" ("+all.length+" записей)."
   }catch(e){m.textContent="Не удалось сделать копию: "+(e.message||"ошибка")}
   b.disabled=false}
+/* ---------- копия фотографий (ZIP без сжатия) ---------- */
+var CRCT=null;
+function crc32(u8){if(!CRCT){CRCT=new Uint32Array(256);for(var n=0;n<256;n++){var c=n;for(var k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;CRCT[n]=c>>>0}}
+  var c=0xFFFFFFFF;for(var i=0;i<u8.length;i++)c=CRCT[(c^u8[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0}
+function zipBuild(files){
+  var enc=new TextEncoder(),parts=[],cd=[],off=0;
+  files.forEach(function(f){
+    var nm=enc.encode(f.name),sz=f.u8.length,crc=crc32(f.u8);
+    var h=new DataView(new ArrayBuffer(30));
+    h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(8,0,true);h.setUint16(10,0,true);h.setUint16(12,0x21,true);
+    h.setUint32(14,crc,true);h.setUint32(18,sz,true);h.setUint32(22,sz,true);h.setUint16(26,nm.length,true);h.setUint16(28,0,true);
+    parts.push(h.buffer,nm,f.keep||f.u8);
+    var c=new DataView(new ArrayBuffer(46));
+    c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x0800,true);c.setUint16(10,0,true);c.setUint16(12,0,true);c.setUint16(14,0x21,true);
+    c.setUint32(16,crc,true);c.setUint32(20,sz,true);c.setUint32(24,sz,true);c.setUint16(28,nm.length,true);c.setUint32(42,off,true);
+    cd.push(c.buffer,nm);off+=30+nm.length+sz});
+  var cdSize=0;cd.forEach(function(p){cdSize+=p.byteLength||p.length});
+  var e=new DataView(new ArrayBuffer(22));e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,cdSize,true);e.setUint32(16,off,true);
+  return new Blob(parts.concat(cd,[e.buffer]),{type:"application/zip"})}
+async function zipRead(file){
+  var tail=Math.min(file.size,70000),tb=new Uint8Array(await file.slice(file.size-tail).arrayBuffer()),p=-1;
+  for(var i=tb.length-22;i>=0;i--){if(tb[i]===0x50&&tb[i+1]===0x4b&&tb[i+2]===5&&tb[i+3]===6){p=i;break}}
+  if(p<0)throw new Error("не архив ZIP");
+  var ev=new DataView(tb.buffer,p),n=ev.getUint16(10,true),cdSize=ev.getUint32(12,true),cdOff=ev.getUint32(16,true);
+  var cd=new DataView(await file.slice(cdOff,cdOff+cdSize).arrayBuffer()),pos=0,out=[],dec=new TextDecoder();
+  for(var k=0;k<n;k++){
+    if(cd.getUint32(pos,true)!==0x02014b50)throw new Error("архив повреждён");
+    var meth=cd.getUint16(pos+10,true),csz=cd.getUint32(pos+20,true),nl=cd.getUint16(pos+28,true),el=cd.getUint16(pos+30,true),cl=cd.getUint16(pos+32,true),lo=cd.getUint32(pos+42,true);
+    var name=dec.decode(new Uint8Array(cd.buffer,pos+46,nl));
+    if(meth!==0)throw new Error("архив не от этой программы");
+    var lh=new DataView(await file.slice(lo,lo+30).arrayBuffer());
+    var ds=lo+30+lh.getUint16(26,true)+lh.getUint16(28,true);
+    out.push({name:name,blob:file.slice(ds,ds+csz)});pos+=46+nl+el+cl}
+  return out}
+async function saveFileOut(blob,name,mime,m){
+  var file=null;try{file=new File([blob],name,{type:mime})}catch(e){}
+  if(file&&navigator.canShare&&navigator.canShare({files:[file]})){
+    try{await navigator.share({files:[file],title:name});return true}catch(e){if(e&&e.name==="AbortError")return false}}
+  var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},8000);return true}
+async function backupPhotos(){
+  var m=$("acc-bkm"),b=$("acc-pbk");b.disabled=true;m.textContent="Собираю список фото…";
+  try{
+    var all=(await fetchAll()).filter(function(r){return r.kind==="photo"});
+    if(!all.length){m.textContent="Фотографий на сервере пока нет.";b.disabled=false;return}
+    var files=[],index={},bad=0;
+    for(var i=0;i<all.length;i++){
+      m.textContent="Скачиваю фото "+(i+1)+" из "+all.length+"…";
+      var d=all[i].data,dl=await sb.storage.from("photos").download(d.path);
+      if(dl.error){bad++;continue}
+      var u8=new Uint8Array(await dl.data.arrayBuffer());
+      files.push({name:"photos/"+d.path,u8:u8});index[all[i].id]=d}
+    if(!files.length)throw new Error("файлы не скачались");
+    files.unshift({name:"index.json",u8:new TextEncoder().encode(JSON.stringify({app:"ortho-clinic-photos",version:1,exportedAt:new Date().toISOString(),photos:index}))});
+    m.textContent="Упаковываю…";
+    var zip=zipBuild(files),dt=new Date(),p=function(n){return(n<10?"0":"")+n};
+    var name="ortho-photos-"+dt.getFullYear()+"-"+p(dt.getMonth()+1)+"-"+p(dt.getDate())+".zip";
+    var ok=await saveFileOut(zip,name,"application/zip");
+    m.textContent=ok?"Копия фото готова: "+(files.length-1)+" шт."+(bad?" Не скачались: "+bad+".":""):""
+  }catch(e){m.textContent="Не удалось сделать копию фото: "+(e.message||"ошибка")}
+  b.disabled=false}
+async function restorePhotos(e){
+  var f=e.target.files[0],m=$("acc-bkm");if(!f)return;m.textContent="Читаю архив…";
+  try{
+    var ents=await zipRead(f),byName={};ents.forEach(function(x){byName[x.name]=x.blob});
+    if(!byName["index.json"])throw new Error("в архиве нет index.json");
+    var j=JSON.parse(await byName["index.json"].text());
+    if(!j||j.app!=="ortho-clinic-photos"||!j.photos)throw new Error("это не архив фото клиники");
+    var ids=Object.keys(j.photos),done=0,skip=0;
+    for(var i=0;i<ids.length;i++){
+      m.textContent="Загружаю фото "+(i+1)+" из "+ids.length+"…";
+      var id=ids[i],d=j.photos[id],bl=byName["photos/"+d.path];if(!bl){skip++;continue}
+      bl=new Blob([bl],{type:"image/jpeg"});d.rev=Date.now()+i;
+      if(d.avatar)await idbPut("avatars",{pid:d.pid,blob:bl,rev:d.rev});
+      else await idbPut("photos",{id:d.id||id,pid:d.pid,date:d.date,slot:d.slot,blob:bl,rev:d.rev});
+      await upBlob(id,bl,d);done++}
+    if(window.loadAvatars)window.loadAvatars();
+    if(window.render)window.render();
+    m.textContent="Фото восстановлены: "+done+(skip?", пропущено: "+skip:"")+"."
+  }catch(x){m.textContent="Не удалось восстановить фото: "+(x.message||"ошибка")}}
 window.__renderAcc=function(){
   var box=$("acc-sess");if(!box)return;
   var chief=S.prof.role==="chief";
   box.innerHTML='<div class="acc-s"><div><b>'+esc(S.prof.name||"")+'</b><small>'+esc(S.user.email||"")+' · '+esc(ROLES[S.prof.role]||S.prof.role)+'</small></div><button type="button" class="cmx txt" id="acc-out">Выйти</button></div>'
-    +(chief?'<div class="fsh-h">Резервная копия</div><p class="hint">Выгружает пациентов, записи, платежи, расходы и настройки одним файлом. Фотографии в копию не входят. Делайте копию перед крупными изменениями.</p><button type="button" class="primary" id="acc-bk">Скачать резервную копию</button><button type="button" class="cmx txt" id="acc-rs" style="margin-top:8px">Восстановить из копии…</button><input type="file" id="acc-rf" accept=".json,application/json" hidden><div class="cmempty" id="acc-bkm" aria-live="polite"></div><div id="acc-rc"></div><div class="fsh-h">Сотрудники и доступ</div><p class="hint">Новый сотрудник сам регистрируется на странице входа. Здесь вы подтверждаете его, выбираете роль и привязываете к карточке врача или администратора.</p><div id="acc-team"><div class="cmempty">Загрузка…</div></div>':'');
+    +(chief?'<div class="fsh-h">Резервная копия</div><p class="hint">Выгружает пациентов, записи, платежи, расходы и настройки одним файлом. Фотографии сохраняются отдельным архивом (кнопка ниже). Делайте копию перед крупными изменениями.</p><button type="button" class="primary" id="acc-bk">Скачать резервную копию</button><button type="button" class="cmx txt" id="acc-rs" style="margin-top:8px">Восстановить из копии…</button><input type="file" id="acc-rf" accept=".json,application/json" hidden><button type="button" class="primary" id="acc-pbk" style="margin-top:14px">Скачать фото (архив ZIP)</button><button type="button" class="cmx txt" id="acc-prs" style="margin-top:8px">Восстановить фото из архива…</button><input type="file" id="acc-pf" accept=".zip,application/zip" hidden><div class="cmempty" id="acc-bkm" aria-live="polite"></div><div id="acc-rc"></div><div class="fsh-h">Сотрудники и доступ</div><p class="hint">Новый сотрудник сам регистрируется на странице входа. Здесь вы подтверждаете его, выбираете роль и привязываете к карточке врача или администратора.</p><div id="acc-team"><div class="cmempty">Загрузка…</div></div>':'');
   $("acc-out").onclick=signOut;
-  if(chief){$("acc-bk").onclick=backup;$("acc-rs").onclick=function(){$("acc-rf").value="";$("acc-rf").click()};$("acc-rf").onchange=restoreFile}
+  if(chief){$("acc-bk").onclick=backup;$("acc-rs").onclick=function(){$("acc-rf").value="";$("acc-rf").click()};$("acc-rf").onchange=restoreFile;$("acc-pbk").onclick=backupPhotos;$("acc-prs").onclick=function(){$("acc-pf").value="";$("acc-pf").click()};$("acc-pf").onchange=restorePhotos}
   if(chief)loadTeam()};
 async function loadTeam(){
   var r=await sb.from("profiles").select("id,name,role").order("created_at");
