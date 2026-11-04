@@ -516,6 +516,8 @@ textarea{resize:vertical;min-height:60px}
 .pill{position:fixed;left:8px;bottom:6px;z-index:60;font-size:11px;padding:2px 8px;border-radius:10px;background:var(--surface);border:1px solid var(--line);pointer-events:none;opacity:.85;max-width:70vw}.pill.ok{color:#2a8a4f}.pill.busy{color:var(--mute)}.pill.err{color:var(--danger)}
 .acc-s{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0 10px}.acc-s small{display:block;color:var(--mute);font-size:13px}
 .tm{border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:8px;background:var(--bg)}.tm.new{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}.tm select{margin-top:6px;width:100%}
+
+@media (min-width:1000px){.bar-in,.wrap{max-width:1400px}.card-body{max-width:900px}}
 </style>
 </head>
 <body>
@@ -2856,6 +2858,13 @@ var CL=["РеСтом","Sadaf","Dentist Kingdom"];
 var KM={"ortho-appts-v1":"appt","ortho-patients-v1":"patient","ortho-exp-v1":"expense","ortho-settings-v1":"settings"};
 var KINDKEY={appt:"ortho-appts-v1",patient:"ortho-patients-v1",expense:"ortho-exp-v1",settings:"ortho-settings-v1"};
 var ROLES={chief:"Главврач",doctor:"Врач",admin:"Администратор",pending:"Ожидает подтверждения"};
+/* ---------- масштаб на компьютере ---------- */
+var ZOOMS=[["auto","Авто (по размеру окна)"],["0.8","80%"],["0.9","90%"],["1","100%"],["1.1","110%"],["1.25","125%"],["1.4","140%"],["1.6","160%"]];
+function zoomVal(){var z=null;try{z=localStorage.getItem("ortho-zoom")}catch(e){}return z||"auto"}
+function applyZoom(){var z=zoomVal(),f=1,w=window.innerWidth||1000;
+  if(z==="auto"){f=w>=1000?Math.min(1.5,Math.max(1,w/1280)):1}else f=parseFloat(z)||1;
+  f=Math.round(f*100)/100;document.documentElement.style.zoom=f===1?"":String(f)}
+applyZoom();window.addEventListener("resize",function(){if(zoomVal()==="auto")applyZoom()});
 var sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
 var S={user:null,prof:null,known:{appt:{},patient:{},expense:{},settings:{}},pending:{},timer:null,busy:false,ready:false,state:"ok",fails:0,started:false};
 function $(i){return document.getElementById(i)}
@@ -3189,8 +3198,9 @@ window.__renderAcc=function(){
   var box=$("acc-sess");if(!box)return;
   var chief=S.prof.role==="chief";
   box.innerHTML='<div class="acc-s"><div><b>'+esc(S.prof.name||"")+'</b><small>'+esc(S.user.email||"")+' · '+esc(ROLES[S.prof.role]||S.prof.role)+'</small></div><button type="button" class="cmx txt" id="acc-out">Выйти</button></div>'
+    +'<div class="fsh-h">Масштаб</div><p class="hint">Для компьютера: подберите размер, чтобы всё помещалось и читалось удобно. Настройка действует только на этом устройстве. Сочетания Ctrl и + / − в браузере тоже работают.</p><select id="acc-zoom" aria-label="Масштаб">'+ZOOMS.map(function(z){return'<option value="'+z[0]+'"'+(zoomVal()===z[0]?' selected':'')+'>'+z[1]+'</option>'}).join('')+'</select>'
     +(chief?'<div class="fsh-h">Резервная копия</div><p class="hint">Выгружает пациентов, записи, платежи, расходы и настройки одним файлом. Фотографии сохраняются отдельным архивом (кнопка ниже). Делайте копию перед крупными изменениями.</p><button type="button" class="primary" id="acc-bk">Скачать резервную копию</button><button type="button" class="cmx txt" id="acc-rs" style="margin-top:8px">Восстановить из копии…</button><input type="file" id="acc-rf" accept=".json,application/json" hidden><button type="button" class="primary" id="acc-pbk" style="margin-top:14px">Скачать фото (архив ZIP)</button><button type="button" class="cmx txt" id="acc-prs" style="margin-top:8px">Восстановить фото из архива…</button><input type="file" id="acc-pf" accept=".zip,application/zip" hidden><div class="cmempty" id="acc-bkm" aria-live="polite"></div><div id="acc-rc"></div><div class="fsh-h">Сотрудники и доступ</div><p class="hint">Новый сотрудник сам регистрируется на странице входа. Здесь вы подтверждаете его, выбираете роль и привязываете к карточке врача или администратора.</p><div id="acc-team"><div class="cmempty">Загрузка…</div></div>':'');
-  $("acc-out").onclick=signOut;
+  $("acc-out").onclick=signOut;$("acc-zoom").onchange=function(){try{localStorage.setItem("ortho-zoom",this.value)}catch(e){}applyZoom()};
   if(chief){$("acc-bk").onclick=backup;$("acc-rs").onclick=function(){$("acc-rf").value="";$("acc-rf").click()};$("acc-rf").onchange=restoreFile;$("acc-pbk").onclick=backupPhotos;$("acc-prs").onclick=function(){$("acc-pf").value="";$("acc-pf").click()};$("acc-pf").onchange=restorePhotos}
   if(chief)loadTeam()};
 async function loadTeam(){
