@@ -501,6 +501,7 @@ textarea{resize:vertical;min-height:60px}
 #t-treat .etiles{grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:6px}#t-treat .etile{min-height:56px;padding:4px 2px;font-size:11px}#t-treat .etile svg{width:46px;height:30px}
 .sz2{display:grid;grid-template-columns:1fr 1fr;gap:8px}#t-treat .sz2 input{min-height:40px}
 .quad{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:2px 0 6px}.quad button{min-height:52px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:inherit;font-size:14px}.quad button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink,#fff);border-color:var(--accent);font-weight:600}
+.clsw{display:flex;align-items:center;gap:8px;margin:2px 0 8px}.clsw label{margin:0;font-size:13px}.clsw select{flex:1;max-width:240px;min-height:40px}.rcl{width:100%;margin:-2px 0 10px}
 #auth{position:fixed;inset:0;z-index:500;background:var(--bg);overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:calc(24px + env(safe-area-inset-top,0px)) 16px 24px}#auth[hidden]{display:none}
 .auth-c{width:min(380px,100%);background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px 18px;margin-top:6vh}.auth-c h1{font-size:20px;margin:6px 0 10px;color:var(--accent)}.auth-logo{display:block;max-width:220px;margin:0 auto 6px}.auth-c label{display:block;font-size:13px;color:var(--mute);margin:12px 0 4px}.auth-c input{width:100%;min-height:46px}
 .auth-m{min-height:20px;margin:10px 0 2px;color:var(--danger);font-size:14px}.auth-h{color:var(--mute);font-size:14px;line-height:1.4}.auth-b{width:100%;min-height:48px;border-radius:12px;border:0;background:var(--accent);color:var(--accent-ink,#fff);font-weight:700;font-size:16px;margin-top:6px}.auth-l{width:100%;min-height:44px;border:0;background:transparent;color:var(--accent);font-size:15px;margin-top:6px}
@@ -534,6 +535,7 @@ textarea{resize:vertical;min-height:60px}
       <button id="next" aria-label="Следующая неделя">›</button>
     </div>
   </div>
+  <div class="clsw"><label for="clinic-sw">Клиника</label><select id="clinic-sw" aria-label="Клиника"></select></div>
   <div class="week" id="week"></div>
   <div class="board" id="board">
     <div class="heads" id="heads"></div>
@@ -684,6 +686,7 @@ textarea{resize:vertical;min-height:60px}
         <label for="ex-date">Дата</label><input id="ex-date" type="date">
         <label for="ex-amt">Сумма</label><input id="ex-amt" type="text" inputmode="numeric" autocomplete="off" placeholder="0">
         <label for="ex-cat">Статья</label><select id="ex-cat"></select>
+        <label for="ex-cl">Клиника</label><select id="ex-cl"></select>
         <label for="ex-doc">Относится к</label><select id="ex-doc"></select>
         <label for="ex-note">Комментарий (за что, кому)</label><input id="ex-note" autocomplete="off">
         <button class="primary" id="ex-add" type="button" style="margin-top:10px">Добавить расход</button>
@@ -1040,6 +1043,15 @@ function defCfg(){return{
 var cfg=loadJ(SKEY)||defCfg();
 if(!cfg.rooms||!cfg.rooms.length)cfg.rooms=defCfg().rooms;
 if(!cfg.staff)cfg.staff=[];
+var CLINICS=["РеСтом","Sadaf","Dentist Kingdom"];
+cfg.rooms.forEach(function(r){if(CLINICS.indexOf(r.clinic)<0)r.clinic=CLINICS[0]});
+var AC="all";try{AC=localStorage.getItem("ortho-ac")||"all"}catch(e){}
+if(AC!=="all"&&CLINICS.indexOf(AC)<0)AC="all";
+function initClinicSw(){var e=document.getElementById("clinic-sw");if(!e)return;e.innerHTML=[["all","Все клиники"]].concat(CLINICS.map(function(c){return[c,c]})).map(function(o){return'<option value="'+o[0]+'"'+(o[0]===AC?" selected":"")+'>'+o[1]+'</option>'}).join("");
+  e.onchange=function(){AC=e.value;try{localStorage.setItem("ortho-ac",AC)}catch(x){}REP.clinic=AC;render()}}
+function visibleRooms(){if(AC==="all")return cfg.rooms;var l=cfg.rooms.filter(function(r){return r.clinic===AC});return l.length?l:cfg.rooms}
+function clinicOfRoom(id){var r=cfg.rooms.filter(function(x){return x.id===id})[0];return r&&r.clinic||CLINICS[0]}
+function curClinic(){if(typeof cur!=="undefined"&&cur&&cur.roomId)return clinicOfRoom(cur.roomId);return AC!=="all"?AC:CLINICS[0]}
 function saveCfg(){saveJ(SKEY,cfg)}
 function meStaff(){return staffById(cfg.me)||cfg.staff.filter(function(s){return s.role==="Главный ортодонт"})[0]||cfg.staff[0]}
 function canPayEdit(){return can("fin_del")}
@@ -1094,15 +1106,16 @@ function render(){
   for(var i=0;i<7;i++){var d=new Date(mon);d.setDate(mon.getDate()+i);
     h+='<button class="day'+(ds(d)===ds(sel)?' sel':'')+(ds(d)===td?' today':'')+'" data-d="'+ds(d)+'"><small>'+DN[i]+'</small><b>'+d.getDate()+'</b></button>'}
   $("week").innerHTML=h;
-  var day=appts.filter(function(a){return a.date===ds(sel)});
+  var VR=visibleRooms(),VID=VR.map(function(r){return r.id});
+  var day=appts.filter(function(a){return a.date===ds(sel)&&VID.indexOf(a.roomId)>-1});
   $("sum").textContent=day.length?day.length+" "+plural(day.length)+" на "+sel.toLocaleDateString("ru-RU",{day:"numeric",month:"long"}):"На этот день записей нет";
-  $("board").style.setProperty("--n",cfg.rooms.length);
-  $("heads").innerHTML='<div></div>'+cfg.rooms.map(function(r){var n=day.filter(function(a){return a.roomId===r.id}).length;return '<div>'+esc(r.name||"Без названия")+'<span>'+n+' '+plural(n)+'</span></div>'}).join("");
+  $("board").style.setProperty("--n",VR.length);
+  $("heads").innerHTML='<div></div>'+VR.map(function(r){var n=day.filter(function(a){return a.roomId===r.id}).length;return '<div>'+esc(r.name||"Без названия")+'<span>'+n+' '+plural(n)+'</span></div>'}).join("");
   var tl='<div class="times" style="height:'+((E-S)*PX)+'px">';
   for(var t=S;t<=E;t+=60)tl+='<div style="top:'+((t-S)*PX)+'px">'+hm(t)+'</div>';
   tl+='</div>';
   var cols="";
-  cfg.rooms.forEach(function(r){
+  VR.forEach(function(r){
     cols+='<div class="col" data-rid="'+r.id+'" style="height:'+((E-S)*PX)+'px">';
     day.filter(function(a){return a.roomId===r.id}).forEach(function(a){cols+=apHtml(a)});
     if(ds(sel)===td){var n=new Date(),nm=n.getHours()*60+n.getMinutes();if(nm>=S&&nm<=E)cols+='<div class="now" style="top:'+((nm-S)*PX)+'px"></div>'}
@@ -1225,6 +1238,7 @@ function initStrips(){
   strip("e-force",{items:["2 oz","3.5 oz","4.5 oz","6 oz","8 oz"],custom:1,ph:"Впишите силу"});
   strip("p-sess",{items:[],req:1})}
 initStrips();
+initClinicSw();
 
 /* ---------- Карта пациента ---------- */
 var phDate=null;
@@ -1329,7 +1343,7 @@ $("mn-info").addEventListener("click",function(e){
   var b=e.target.closest("[data-f]");if(!b||!MN||!can("appt_edit"))return;var f=b.dataset.f;
   if(f==="doc"){var l=doctors().map(function(s){return{id:s.id,t:sname(s),ph:docPh(s)}});l.push({id:"",t:"Не указан"});
     pkList("Специалист",l,MN.docId||"",function(id){MN.docId=id||null;save();render();openMini(MN)})}
-  else if(f==="room"){pkList("Кабинет",cfg.rooms.map(function(r){return{id:r.id,t:r.name}}),MN.roomId,function(id){if(id===MN.roomId)return true;return mnMove({roomId:id})})}
+  else if(f==="room"){pkList("Кабинет",cfg.rooms.map(function(r){return{id:r.id,t:r.name+" · "+r.clinic}}),MN.roomId,function(id){if(id===MN.roomId)return true;return mnMove({roomId:id})})}
   else if(f==="date")pkCal();
   else if(f==="time")pkTime();
   else if(f==="type"){var l2=TYPES.map(function(t,i){return{id:i,t:t[0]}});pkList("Тип визита",l2,typeof MN.type==="number"?MN.type:-1,function(id){MN.type=id;save();render();openMini(MN)})}});
@@ -1380,7 +1394,7 @@ function openCard(a){
   var d=a?a.date:ds(sel),st=a?a.start:pre.start,rid=a?a.roomId:pre.roomId;
   $("c-name").textContent=curP?(curP.name||"Без имени"):"Новая запись";
   subBase=fmtD(d)+", "+hm(st)+", "+(roomById(rid)?roomById(rid).name:"");curAge="";headSub();
-  opts($("f-room"),cfg.rooms.map(function(r){return[r.id,r.name||"Без названия"]}),rid);
+  opts($("f-room"),cfg.rooms.map(function(r){return[r.id,(r.name||"Без названия")+" · "+r.clinic]}),rid);
   var docs=doctors().map(function(s){return[s.id,sname(s)]});
   var ridx=Math.max(0,cfg.rooms.map(function(r){return r.id}).indexOf(rid));
   var dv=a?a.docId:(docs[ridx]||docs[0]||["",""])[0];
@@ -1766,7 +1780,7 @@ $("fsh-ok").onclick=function(){
     if(!mt){toast("Выберите способ оплаты");return}
     if(FS.edit){var r0=FS.edit;r0.date=$("fsh-date").value||date;r0.amount=String(rec);r0.method=mt;r0.note=$("fsh-note").value.trim();
       fsClose();tpChanged();toast("Платёж изменён");return}
-    (curP.payments=curP.payments||[]).push({docId:docFor(curP,$("fsh-date").value||date),by:cfg.me||null,id:uid(),date:$("fsh-date").value||date,amount:String(rec),method:mt,note:$("fsh-note").value.trim()});
+    (curP.payments=curP.payments||[]).push({clinic:curClinic(),docId:docFor(curP,$("fsh-date").value||date),by:cfg.me||null,id:uid(),date:$("fsh-date").value||date,amount:String(rec),method:mt,note:$("fsh-note").value.trim()});
     fsClose();tpChanged();toast("Принято: "+money(rec)+" · "+mt);return}
   if(FS.edit){var it0=FS.edit,nd=$("fsh-qdate").value||date;
     if(it0.quick){var am0=num($("fsh-amt").value);if(!(am0>0)){$("fsh-amt").focus();return}
@@ -1780,8 +1794,8 @@ $("fsh-ok").onclick=function(){
   var nm=$("fsh-name").value.trim()||"Быстрый акт";
   var sg=(curP.stages=curP.stages||[]).filter(function(x){return x.quick})[0];
   if(!sg){sg={id:uid(),mode:"none",sel:[],quick:true};curP.stages.push(sg)}
-  (curP.items=curP.items||[]).push({docId:docFor(curP,date),id:uid(),date:date,svc:"",sc:"any",stg:sg.id,name:nm,label:"Без привязки к зубам",teeth:[],kind:"any",price:String(am),qty:"1",dt:FS.dt,dv:$("fsh-dv").value,status:"done",doneDate:date,quick:true});
-  if(paid>0)(curP.payments=curP.payments||[]).push({docId:docFor(curP,date),by:cfg.me||null,id:uid(),date:date,amount:String(paid),method:qm,note:"Быстрый акт: "+nm});
+  (curP.items=curP.items||[]).push({clinic:curClinic(),docId:docFor(curP,date),id:uid(),date:date,svc:"",sc:"any",stg:sg.id,name:nm,label:"Без привязки к зубам",teeth:[],kind:"any",price:String(am),qty:"1",dt:FS.dt,dv:$("fsh-dv").value,status:"done",doneDate:date,quick:true});
+  if(paid>0)(curP.payments=curP.payments||[]).push({clinic:curClinic(),docId:docFor(curP,date),by:cfg.me||null,id:uid(),date:date,amount:String(paid),method:qm,note:"Быстрый акт: "+nm});
   fsClose();tpChanged();toast("Акт добавлен"+(paid>0?" · оплачено "+money(paid):""))};
 
 /* ---------- Визит и комментарии ---------- */
@@ -1864,7 +1878,7 @@ function renderSettings(){
   hid($("sp-staff"),!isChief());hid($("room-add"),!isChief());$("set-rooms").style.pointerEvents=isChief()?"":"none";
   $("set-me").innerHTML=cfg.staff.map(function(s){return '<option value="'+s.id+'"'+(meStaff()&&meStaff().id===s.id?" selected":"")+'>'+esc(sname(s))+" — "+esc(s.role)+"</option>"}).join("");
   $("set-rooms").innerHTML=cfg.rooms.map(function(r,i){
-    return '<div class="rowe"><input data-rn="'+r.id+'" value="'+esc(r.name)+'" aria-label="Название кабинета '+(i+1)+'" autocomplete="off"><button class="cmx txt" data-rdel="'+r.id+'">Удалить</button></div>'}).join("");
+    return '<div class="rowe"><input data-rn="'+r.id+'" value="'+esc(r.name)+'" aria-label="Название кабинета '+(i+1)+'" autocomplete="off"><button class="cmx txt" data-rdel="'+r.id+'">Удалить</button></div><select class="rcl" data-rc="'+r.id+'" aria-label="Клиника кабинета '+(i+1)+'">'+CLINICS.map(function(c){return'<option'+(c===r.clinic?" selected":"")+'>'+c+'</option>'}).join("")+'</select>'}).join("");
   $("set-staff").innerHTML=cfg.staff.map(function(s,i){
     return '<div class="stf"><div class="rowe"><button type="button" class="sph" data-sph="'+s.id+'" aria-label="Фото сотрудника">'+(s.photo?'<img src="'+s.photo+'" alt="">':AV_PH)+'</button><input data-sn="'+s.id+'" value="'+esc(s.name)+'" placeholder="Имя и фамилия" aria-label="Имя и фамилия сотрудника '+(i+1)+'" autocomplete="off"><button class="cmx txt" data-sdel="'+s.id+'">Удалить</button></div>'
       +'<select data-sr="'+s.id+'" aria-label="Должность">'+ROLES.map(function(r){return '<option'+(r===s.role?' selected':'')+'>'+r+'</option>'}).join("")+'</select>'
@@ -1884,7 +1898,8 @@ $("set-back").onclick=closeSettings;
 $("set").addEventListener("input",function(e){
   var el=e.target;
   if(el.id==="set-me"){cfg.me=el.value;saveCfg();applyPerms();renderSettings();render();return}
-  if(el.dataset.rn){var r=roomById(el.dataset.rn);if(r)r.name=el.value}
+  if(el.dataset.rc){var rc=roomById(el.dataset.rc);if(rc)rc.clinic=el.value}
+  else if(el.dataset.rn){var r=roomById(el.dataset.rn);if(r)r.name=el.value}
   else if(el.dataset.sn){var s=staffById(el.dataset.sn);if(s){s.name=el.value;renderPerms()}}
   else if(el.dataset.sr){var s2=staffById(el.dataset.sr);if(s2){s2.role=el.value;renderPerms();renderAccount();applyPerms()}}
   else return;
@@ -1904,7 +1919,7 @@ $("set").addEventListener("click",function(e){
     var sid=b.dataset.sdel;
     arm(b,"Точно удалить?",function(){cfg.staff=cfg.staff.filter(function(x){return x.id!==sid});saveCfg();renderSettings();render()});return}});
 $("room-add").onclick=function(){
-  var r={id:uid(),name:"Кабинет "+(cfg.rooms.length+1)};cfg.rooms.push(r);saveCfg();renderSettings();render();
+  var r={id:uid(),name:"Кабинет "+(cfg.rooms.length+1),clinic:AC!=="all"?AC:CLINICS[0]};cfg.rooms.push(r);saveCfg();renderSettings();render();
   var inp=$("set-rooms").querySelector('[data-rn="'+r.id+'"]');if(inp){inp.focus();inp.select()}};
 $("staff-add").onclick=function(){
   var used=cfg.staff.map(function(s){return s.color});
@@ -2376,7 +2391,7 @@ $("tp-stages").addEventListener("click",function(e){
     if(b.dataset.st){
       function flip(){
         if(it.status==="done"){it.status="approved";it.doneDate=""}
-        else{it.status="done";it.doneDate=ds(new Date());it.docId=docFor(curP,it.doneDate)}
+        else{it.status="done";it.doneDate=ds(new Date());it.docId=docFor(curP,it.doneDate);it.clinic=curClinic()}
         tpChanged();
         toast(it.status==="done"?"Выполнено. Сумма зафиксирована и добавлена в долг":"Отметка снята, сумма убрана из долга")}
       flip()}
@@ -2696,7 +2711,7 @@ function plDraw(){
 /* ---------- Отчёты ---------- */
 var EXKEY="ortho-exp-v1",EXP=loadJ(EXKEY)||[];
 var EXCATS=["Аренда","Материалы","Зарплата","Лаборатория","Реклама","Коммунальные","Оборудование","Другое"];
-var REP={who:"all",per:"month",from:"",to:""};
+var REP={clinic:AC,who:"all",per:"month",from:"",to:""};
 function docFor(p,iso){
   var l=appts.filter(function(a){return a.pid===p.id&&a.docId}).sort(function(x,y){return x.date<y.date?1:x.date>y.date?-1:0});
   var same=l.filter(function(a){return a.date===iso})[0];if(same)return same.docId;
@@ -2717,12 +2732,12 @@ function repData(){
   var acts=[],pays=[],exps=[];
   patients.forEach(function(p){
     planItems(p).forEach(function(i){if(i.status!=="done")return;var d=i.doneDate||i.date||"";
-      acts.push({d:d,pat:p.name||"Без имени",name:i.name||"Услуга",sub:i.label||"",sum:itemNet(i),doc:i.docId||docFor(p,d),quick:!!i.quick})});
+      acts.push({d:d,pat:p.name||"Без имени",name:i.name||"Услуга",sub:i.label||"",sum:itemNet(i),doc:i.docId||docFor(p,d),quick:!!i.quick,cl:i.clinic||CLINICS[0]})});
     (p.payments||[]).forEach(function(x){var d=x.date||"";
-      pays.push({d:d,pat:p.name||"Без имени",method:x.method||"Не указан",sum:num(x.amount),doc:x.docId||docFor(p,d),note:x.note||"",by:x.by})})});
-  EXP.forEach(function(x){exps.push({id:x.id,d:x.date,cat:x.cat,note:x.note||"",sum:num(x.amount),doc:x.docId||null})});
+      pays.push({d:d,pat:p.name||"Без имени",method:x.method||"Не указан",sum:num(x.amount),doc:x.docId||docFor(p,d),note:x.note||"",by:x.by,cl:x.clinic||CLINICS[0]})})});
+  EXP.forEach(function(x){exps.push({id:x.id,d:x.date,cat:x.cat,note:x.note||"",sum:num(x.amount),doc:x.docId||null,cl:x.clinic||CLINICS[0]})});
   var f=REP.from||"",t=REP.to||"9999-12-31",w=REP.who;
-  function ok(r){return r.d>=f&&r.d<=t&&(w==="all"||r.doc===w)}
+  function ok(r){return r.d>=f&&r.d<=t&&(w==="all"||r.doc===w)&&(REP.clinic==="all"||r.cl===REP.clinic)}
   var by=function(a,b){return a.d<b.d?1:a.d>b.d?-1:0};
   return{acts:acts.filter(ok).sort(by),pays:pays.filter(ok).sort(by),exps:exps.filter(ok).sort(by)}}
 function sumOf(l){return l.reduce(function(a,x){return a+x.sum},0)}
@@ -2730,13 +2745,15 @@ function tblH(heads,rows,empty){
   if(!rows.length)return'<tbody><tr><td class="cmempty">'+empty+'</td></tr></tbody>';
   return'<thead><tr>'+heads.map(function(h){return'<th'+(h[1]?' class="n"':'')+'>'+h[0]+'</th>'}).join("")+'</tr></thead><tbody>'+rows.join("")+'</tbody>'}
 function repRender(){
+  var rc=$("rep-cl");if(!rc){rc=document.createElement("div");rc.id="rep-cl";rc.className="stabs";$("rep-who").parentNode.insertBefore(rc,$("rep-who"))}
+  rc.innerHTML=[["all","Все клиники"]].concat(CLINICS.map(function(c){return[c,c]})).map(function(w){return'<button type="button" data-cl="'+esc(w[0])+'" aria-pressed="'+(REP.clinic===w[0])+'">'+esc(w[1])+'</button>'}).join("");
   var who=[["all","Вся клиника"]].concat(doctors().map(function(s){return[s.id,sname(s)]}));
   $("rep-who").innerHTML=who.map(function(w){return'<button type="button" data-w="'+w[0]+'" aria-pressed="'+(REP.who===w[0])+'">'+esc(w[1])+'</button>'}).join("");
   var P=[["week","Неделя"],["month","Этот месяц"],["prev","Прошлый месяц"],["year","Год"],["all","Всё время"]];
   $("rep-per").innerHTML=P.map(function(p){return'<button type="button" data-p="'+p[0]+'" aria-pressed="'+(REP.per===p[0])+'">'+p[1]+'</button>'}).join("");
   $("rep-from").value=REP.from;$("rep-to").value=REP.to==="9999-12-31"?"":REP.to;
   var D=repData(),inc=sumOf(D.pays),done=sumOf(D.acts),exp=sumOf(D.exps),net=inc-exp;
-  $("rep-sub").textContent=(REP.who==="all"?"Вся клиника":dnm(REP.who))+" · "+(REP.from?fmtD(REP.from):"с начала")+" – "+(REP.to&&REP.to!=="9999-12-31"?fmtD(REP.to):"сейчас");
+  $("rep-sub").textContent=(REP.clinic==="all"?"Все клиники":REP.clinic)+" · "+(REP.who==="all"?"все врачи":dnm(REP.who))+" · "+(REP.from?fmtD(REP.from):"с начала")+" – "+(REP.to&&REP.to!=="9999-12-31"?fmtD(REP.to):"сейчас");
   var debt=0;if(REP.who==="all")patients.forEach(function(p){var b=balOf(p).bal;if(b>0.5)debt+=b});
   $("rep-sum").innerHTML=[["Приход (оплаты)",money(inc),""],["Выполнено работ",money(done),""],["Расходы",money(exp),""],["Итого: приход − расходы",(net<0?"−":"")+money(Math.abs(net)),net<0?"neg":"pos"]].concat(REP.who==="all"?[["Долги пациентов (сейчас)",money(debt),debt>0?"neg":""]]:[])
     .map(function(i){return'<div class="sc"><small>'+i[0]+'</small><b class="'+i[2]+'">'+esc(i[1])+'</b></div>'}).join("");
@@ -2748,6 +2765,9 @@ function repRender(){
     var dm={};D.acts.forEach(function(x){var k=dnm(x.doc);dm[k]=dm[k]||{a:0,p:0};dm[k].a+=x.sum});D.pays.forEach(function(x){var k=dnm(x.doc);dm[k]=dm[k]||{a:0,p:0};dm[k].p+=x.sum});
     var dr=Object.keys(dm).sort(function(a,b){return dm[b].a-dm[a].a});
     brk+='<div class="grp"><h3>По врачам</h3>'+(dr.length?'<table><tr><td></td><td class="n"><small>Выполнено</small></td><td class="n"><small>Оплачено</small></td></tr>'+dr.map(function(k){return'<tr><td>'+esc(k)+'</td><td class="n">'+money(dm[k].a)+'</td><td class="n">'+money(dm[k].p)+'</td></tr>'}).join("")+'</table>':'<div class="cmempty">Нет данных</div>')+'</div>'}
+  if(REP.clinic==="all"){var cm={};D.acts.forEach(function(x){var k=x.cl;cm[k]=cm[k]||{a:0,p:0,e:0};cm[k].a+=x.sum});D.pays.forEach(function(x){var k=x.cl;cm[k]=cm[k]||{a:0,p:0,e:0};cm[k].p+=x.sum});D.exps.forEach(function(x){var k=x.cl;cm[k]=cm[k]||{a:0,p:0,e:0};cm[k].e+=x.sum});
+    var cr=Object.keys(cm);
+    brk+='<div class="grp"><h3>По клиникам</h3>'+(cr.length?'<table><tr><td></td><td class="n"><small>Оплачено</small></td><td class="n"><small>Расходы</small></td><td class="n"><small>Итого</small></td></tr>'+cr.map(function(k){var v=cm[k],n=v.p-v.e;return'<tr><td>'+esc(k)+'</td><td class="n">'+money(v.p)+'</td><td class="n">'+money(v.e)+'</td><td class="n">'+(n<0?"−":"")+money(Math.abs(n))+'</td></tr>'}).join("")+'</table>':'<div class="cmempty">Данных нет</div>')+'</div>'}
   brk+=bt("Приход по способам оплаты",g(D.pays,function(x){return x.method}))+bt("Расходы по статьям",g(D.exps,function(x){return x.cat||"Другое"}));
   $("rep-brk").innerHTML='<div class="brk">'+brk+'</div>';
   var de=can("exp_edit");
@@ -2760,16 +2780,18 @@ function repOpen(){
   if(!REP.from&&REP.per!=="all")repSet(REP.per);
   $("ex-date").value=ds(new Date());$("ex-amt").value="";$("ex-note").value="";
   opts($("ex-cat"),EXCATS.map(function(c){return[c,c]}),EXCATS[0]);
+  opts($("ex-cl"),CLINICS.map(function(c){return[c,c]}),REP.clinic!=="all"?REP.clinic:(AC!=="all"?AC:CLINICS[0]));
   opts($("ex-doc"),[["","Вся клиника (общий)"]].concat(doctors().map(function(s){return[s.id,sname(s)]})),"");
   repRender();$("rep").hidden=false;document.body.style.overflow="hidden";$("rep").querySelector(".card-scroll").scrollTop=0}
 function repClose(){$("rep").hidden=true;if($("card").hidden&&$("set").hidden)document.body.style.overflow=""}
 $("repbtn").onclick=repOpen;$("rep-back").onclick=repClose;
+$("rep").addEventListener("click",function(e){var b=e.target.closest("[data-cl]");if(b&&b.closest("#rep-cl")){REP.clinic=b.dataset.cl;repRender()}});
 $("rep-who").addEventListener("click",function(e){var b=e.target.closest("[data-w]");if(b){REP.who=b.dataset.w;repRender()}});
 $("rep-per").addEventListener("click",function(e){var b=e.target.closest("[data-p]");if(b){repSet(b.dataset.p);repRender()}});
 $("rep-from").onchange=$("rep-to").onchange=function(){REP.per="custom";REP.from=$("rep-from").value;REP.to=$("rep-to").value||"9999-12-31";repRender()};
 $("ex-add").onclick=function(){
   if(!can("exp_edit"))return;var am=num($("ex-amt").value);if(!(am>0)){$("ex-amt").focus();return}
-  EXP.push({id:uid(),date:$("ex-date").value||ds(new Date()),amount:String(am),cat:$("ex-cat").value,note:$("ex-note").value.trim(),docId:$("ex-doc").value||null});
+  EXP.push({id:uid(),date:$("ex-date").value||ds(new Date()),amount:String(am),cat:$("ex-cat").value,note:$("ex-note").value.trim(),docId:$("ex-doc").value||null,clinic:$("ex-cl").value});
   saveJ(EXKEY,EXP);$("ex-amt").value="";$("ex-note").value="";$("ex-form").open=false;repRender();toast("Расход добавлен")};
 $("rep-exp").addEventListener("click",function(e){var b=e.target.closest("[data-exdel]");if(!b||!can("exp_edit"))return;EXP=EXP.filter(function(x){return x.id!==b.dataset.exdel});saveJ(EXKEY,EXP);repRender()});
 $("rep-csv").onclick=async function(){
@@ -2836,7 +2858,7 @@ function lset(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 function rowsOf(kind,v){
   if(kind==="settings"){var c=JSON.parse(JSON.stringify(v||{}));delete c.me;return[{id:"cfg",data:c}]}
   return(v||[]).filter(function(x){return x&&x.id!=null}).map(function(x){return{id:String(x.id),data:x}})}
-function clinicOf(r){var c=r.data&&r.data.clinic;return CL.indexOf(c)>-1?c:CL[0]}
+function clinicOf(kind,r){if(kind==="appt"&&window.cfg&&r.data){var rm=(window.cfg.rooms||[]).filter(function(x){return x.id===r.data.roomId})[0];if(rm&&CL.indexOf(rm.clinic)>-1)return rm.clinic}var c=r.data&&r.data.clinic;return CL.indexOf(c)>-1?c:CL[0]}
 /* ---------- индикатор ---------- */
 function pill(){var p=$("sync-pill");if(!p)return;var t={ok:"● Синхронизировано",busy:"↻ Сохраняю…",err:"⚠ Нет связи: данные сохранены только на этом устройстве"}[S.state];p.textContent=t;p.className="pill "+S.state}
 function setState(s){S.state=s;pill()}
@@ -2851,7 +2873,7 @@ async function flush(){
   try{
     for(var i=0;i<keys.length;i++){
       var k=keys[i],kind=KM[k],rows=rowsOf(kind,S.pending[k]),known=S.known[kind],now={},up=[],del=[];
-      rows.forEach(function(r){var s=stable(r.data);now[r.id]=s;if(known[r.id]!==s)up.push({kind:kind,id:r.id,clinic:clinicOf(r),data:r.data,updated_at:new Date().toISOString()})});
+      rows.forEach(function(r){var s=stable(r.data);now[r.id]=s;if(known[r.id]!==s)up.push({kind:kind,id:r.id,clinic:clinicOf(kind,r),data:r.data,updated_at:new Date().toISOString()})});
       if(kind!=="settings")Object.keys(known).forEach(function(id){if(now[id]===undefined)del.push(id)});
       for(var a=0;a<up.length;a+=100){var rr=await sb.from("records").upsert(up.slice(a,a+100),{onConflict:"kind,id"});if(rr.error)throw rr.error}
       for(var b=0;b<del.length;b+=100){var dd=await sb.from("records").delete().eq("kind",kind).in("id",del.slice(b,b+100));if(dd.error)throw dd.error}
