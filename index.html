@@ -1191,9 +1191,10 @@ function dgMark(col,day){
   [].forEach.call(document.querySelectorAll(".dg-prev"),function(n){n.remove()});
   [].forEach.call(document.querySelectorAll(".day.dg-t"),function(n){n.classList.remove("dg-t")});
   if(day)day.classList.add("dg-t")}
+function dgZoom(){var c=document.querySelector(".col");if(!c)return 1;var z=c.getBoundingClientRect().height/((E-S)*PX);return z>0.4&&z<4?z:1}
 function dgStart(){
-  var g=DG;if(!g||g.on)return;g.on=true;
-  var gh=g.el.cloneNode(true);gh.classList.add("dg-ghost");gh.style.width=g.w+"px";gh.style.height=g.h+"px";gh.style.top="0";gh.style.left="0";
+  var g=DG;if(!g||g.on)return;g.on=true;g.z=dgZoom();
+  var gh=g.el.cloneNode(true);gh.classList.add("dg-ghost");gh.style.width=(g.w/g.z)+"px";gh.style.height=(g.h/g.z)+"px";gh.style.top="0";gh.style.left="0";
   document.body.appendChild(gh);g.gh=gh;g.el.classList.add("dg-src");document.body.classList.add("dg-on");
   try{if(navigator.vibrate)navigator.vibrate(12)}catch(e){}
   dgUpdate();
@@ -1203,7 +1204,7 @@ function dgStart(){
     dgUpdate();DG.raf=requestAnimationFrame(loop)})()}
 function dgUpdate(){
   var g=DG;if(!g||!g.on)return;
-  g.gh.style.transform="translate("+(g.x-g.ox)+"px,"+(g.y-g.oy)+"px)";
+  g.z=dgZoom();g.gh.style.transform="translate("+((g.x-g.ox)/g.z)+"px,"+((g.y-g.oy)/g.z)+"px)";
   var hit=document.elementFromPoint(g.x,g.y),a=g.a,T=null,col=null,day=null;
   dgMark(null,null);
   var nav=hit&&hit.closest("#prev,#next");
@@ -1212,7 +1213,7 @@ function dgUpdate(){
   col=hit&&hit.closest(".col");day=!col&&hit&&hit.closest(".day");
   var lab=g.gh.querySelector(".ap-t");
   if(col){
-    var cr=col.getBoundingClientRect(),m=S+Math.round(((g.y-g.oy)-cr.top)/PX/15)*15;m=Math.max(S,Math.min(E-a.dur,m));
+    var cr=col.getBoundingClientRect(),m=S+Math.round(((g.y-g.oy)-cr.top)/(PX*g.z)/15)*15;m=Math.max(S,Math.min(E-a.dur,m));
     T={date:ds(sel),roomId:col.dataset.rid,start:m,dur:a.dur};
     var bad=dgClash(a,T),pv=document.createElement("div");pv.className="dg-prev"+(bad?" bad":"");pv.style.top=((m-S)*PX)+"px";pv.style.height=(a.dur*PX-2)+"px";pv.textContent=hm(m)+"–"+hm(m+a.dur);col.appendChild(pv);
     T.bad=bad;if(lab)lab.textContent=hm(m)+"–"+hm(m+a.dur)}
