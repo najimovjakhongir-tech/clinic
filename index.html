@@ -3003,12 +3003,30 @@ function startApp(){
 function ok2(){return"ok"}
 /* ---------- аккаунты в настройках ---------- */
 var TEAM=null;
+async function backup(){
+  var m=$("acc-bkm"),b=$("acc-bk");b.disabled=true;m.textContent="Готовлю копию…";
+  try{
+    var all=await fetchAll();
+    var pr=await sb.from("profiles").select("id,name,role");
+    var out={app:"ortho-clinic",version:1,exportedAt:new Date().toISOString(),by:S.prof.name||"",counts:{},profiles:pr.data||[],records:all.map(function(r){return{kind:r.kind,id:r.id,data:r.data}})};
+    all.forEach(function(r){out.counts[r.kind]=(out.counts[r.kind]||0)+1});
+    var d=new Date(),p=function(n){return(n<10?"0":"")+n};
+    var name="ortho-backup-"+d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+".json";
+    var blob=new Blob([JSON.stringify(out,null,1)],{type:"application/json"});
+    var file=null;try{file=new File([blob],name,{type:"application/json"})}catch(e){}
+    if(file&&navigator.canShare&&navigator.canShare({files:[file]})){
+      try{await navigator.share({files:[file],title:name});m.textContent="Копия готова: "+all.length+" записей.";b.disabled=false;return}catch(e){if(e&&e.name==="AbortError"){m.textContent="";b.disabled=false;return}}}
+    var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},4000);
+    m.textContent="Копия сохранена: "+name+" ("+all.length+" записей)."
+  }catch(e){m.textContent="Не удалось сделать копию: "+(e.message||"ошибка")}
+  b.disabled=false}
 window.__renderAcc=function(){
   var box=$("acc-sess");if(!box)return;
   var chief=S.prof.role==="chief";
   box.innerHTML='<div class="acc-s"><div><b>'+esc(S.prof.name||"")+'</b><small>'+esc(S.user.email||"")+' · '+esc(ROLES[S.prof.role]||S.prof.role)+'</small></div><button type="button" class="cmx txt" id="acc-out">Выйти</button></div>'
-    +(chief?'<div class="fsh-h">Сотрудники и доступ</div><p class="hint">Новый сотрудник сам регистрируется на странице входа. Здесь вы подтверждаете его, выбираете роль и привязываете к карточке врача или администратора.</p><div id="acc-team"><div class="cmempty">Загрузка…</div></div>':'');
+    +(chief?'<div class="fsh-h">Резервная копия</div><p class="hint">Выгружает пациентов, записи, платежи, расходы и настройки одним файлом. Фотографии в копию не входят. Делайте копию перед крупными изменениями.</p><button type="button" class="primary" id="acc-bk">Скачать резервную копию</button><div class="cmempty" id="acc-bkm" aria-live="polite"></div><div class="fsh-h">Сотрудники и доступ</div><p class="hint">Новый сотрудник сам регистрируется на странице входа. Здесь вы подтверждаете его, выбираете роль и привязываете к карточке врача или администратора.</p><div id="acc-team"><div class="cmempty">Загрузка…</div></div>':'');
   $("acc-out").onclick=signOut;
+  if(chief)$("acc-bk").onclick=backup;
   if(chief)loadTeam()};
 async function loadTeam(){
   var r=await sb.from("profiles").select("id,name,role").order("created_at");
