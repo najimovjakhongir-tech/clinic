@@ -458,10 +458,19 @@ textarea{resize:vertical;min-height:60px}
 .ap-n.debt{color:#b71c1c}
 .ap-n.pre{color:#17783f}
 .ap-d{font-size:12px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink);opacity:.85}
+.ap{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.dg-ghost{position:fixed!important;left:0!important;right:auto!important;margin:0!important;z-index:90;pointer-events:none;opacity:.94;box-shadow:0 12px 32px rgba(0,0,0,.38);outline:2px solid var(--accent)}
+.dg-src{opacity:.28}
+.dg-prev{position:absolute;left:3px;right:3px;z-index:4;pointer-events:none;border:2px dashed var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);border-radius:7px;font-size:12px;font-weight:700;color:var(--accent);padding:2px 6px}
+.dg-prev.bad{border-color:var(--danger);background:color-mix(in srgb,var(--danger) 14%,transparent);color:var(--danger)}
+.day.dg-t{outline:3px solid var(--cyan);transform:scale(1.06)}
+body.dg-on{cursor:grabbing;-webkit-user-select:none;user-select:none}
+.qb-dt{display:flex;gap:8px;margin:2px 0 10px}.qb-dt button{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;min-height:46px;border:1px solid var(--line);background:var(--bg);border-radius:12px;color:var(--ink);font-weight:600;font-size:14px}.qb-dt svg{width:19px;height:19px;flex:none;color:var(--accent)}
+.ap-ty{margin-top:3px;width:fit-content;max-width:100%;padding:1px 8px;border-radius:9px;background:rgba(90,90,100,.2);border:1px solid rgba(90,90,100,.38);font-size:11.5px;line-height:1.3;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ap-c{margin-top:3px;padding:3px 8px;border-radius:9px;background:rgba(90,90,100,.26);border:1px solid rgba(90,90,100,.4);font-size:12px;line-height:1.25;color:var(--ink);overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow-wrap:anywhere}
 .stt{position:absolute;top:2px;right:2px;z-index:2;width:20px;height:20px;min-height:0;padding:0;border-radius:50%;border:2px solid var(--surface);box-shadow:0 0 0 1px rgba(0,0,0,.25);background:var(--sc,#fff);color:#fff;font-size:13px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .stt[data-s="plan"]{border-color:#b6c2cf;box-shadow:none}
-.stt[data-s="done"]::after{content:"✓"}.stt[data-s="cancel"]::after{content:"×";font-size:17px}.stt[data-s="noshow"]::after{content:"!"}
+.stt[data-s="done"]::after,.stt[data-s="conf"]::after{content:"✓"}.stt[data-s="cancel"]::after{content:"×";font-size:17px}.stt[data-s="noshow"]::after{content:"!"}
 .ap.ap-x{opacity:.62}.ap.ap-x .ap-n{text-decoration:line-through}
 .apt{padding-right:0}
 .col{container-type:inline-size}
@@ -642,6 +651,7 @@ textarea{resize:vertical;min-height:60px}
   <div class="drw-scrim" id="qb-scrim"></div>
   <aside class="drw-p" role="dialog" aria-modal="true" aria-labelledby="qb-title">
     <div class="mn-h"><div class="mn-t"><b id="qb-title">Записать пациента</b><small id="qb-sub"></small></div><button type="button" class="cmx" id="qb-close" aria-label="Закрыть">×</button></div>
+    <div class="qb-dt"><button type="button" id="qb-date" aria-label="Выбрать дату"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg><span></span></button><button type="button" id="qb-time" aria-label="Выбрать время"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span></span></button></div>
     <div id="qb-main">
       <label for="qb-q" class="qb-l">ФИО пациента</label>
       <div class="qb-row"><input id="qb-q" type="search" placeholder="Фамилия и имя" autocomplete="off" aria-label="ФИО пациента"><button type="button" id="qb-pick" class="qb-ic" aria-label="Выбрать из списка пациентов" title="Выбрать из списка пациентов"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></button></div>
@@ -1022,7 +1032,7 @@ var ROLES=["Главный ортодонт","Врач","Ученик-ортод
 var COLORS=["#1a4585","#0f8a6a","#c2761a","#8a52c9","#d0485e","#0a8fa3","#c2418f","#546e7a"];
 var ICON='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.6A8 8 0 1 1 21 12z"/></svg>';
 var DN=["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
-var S=9*60,E=20*60,PX=40/30,KEY="ortho-appts-v1",PKEY="ortho-patients-v1",SKEY="ortho-settings-v1";
+var S=8*60,E=24*60,PX=40/30,KEY="ortho-appts-v1",PKEY="ortho-patients-v1",SKEY="ortho-settings-v1";
 
 var $=function(i){return document.getElementById(i)};
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
@@ -1097,7 +1107,7 @@ function monday(d){var x=new Date(d);var w=(x.getDay()+6)%7;x.setDate(x.getDate(
 
 /* ---------- Расписание ---------- */
 var AVC={};
-var STAT=[["plan","Записан","#ffffff"],["came","Пришёл","#f5a623"],["in","В кабинете","#2e9e5b"],["done","Приём завершён","#3a7bd5"],["cancel","Отменил приём","#d33b3b"],["noshow","Не пришёл","#4b4f56"]];
+var STAT=[["plan","Записан","#ffffff"],["conf","Подтверждён","#8a5cd0"],["came","Пришёл","#f5a623"],["in","В кабинете","#2e9e5b"],["done","Приём завершён","#3a7bd5"],["cancel","Отменил приём","#d33b3b"],["noshow","Не пришёл","#4b4f56"]];
 function statOf(a){return STAT.filter(function(x){return x[0]===(a.status||"plan")})[0]||STAT[0]}
 function apHtml(a){
   var cs=a.comments||[],last=cs[cs.length-1],st=staffById(a.docId),d=a.dur;
@@ -1105,7 +1115,7 @@ function apHtml(a){
   var av=AVC[a.pid]?'<img class="pav ph2'+(d<45?' sm':'')+'" alt="" src="'+AVC[a.pid].url+'">':'';
   var bc=balCls(byId(a.pid)||{}),chip=last&&d>=90;
   h+='<div class="rt" aria-hidden="true"></div><div class="ap-top'+(av?'':' np')+'">'+av+'<div class="ap-t">'+hm(a.start)+'–'+hm(a.start+d)+'</div><div class="ap-n'+(bc?' '+bc:'')+(av&&d>=60?' w2':'')+'">'+esc(a.patient)+'</div></div>'
-    +(d>=45?'<div class="ap-d">'+esc(st?sname(st):"врач не указан")+'</div>':'')+'<button type="button" class="stt" data-s="'+sv[0]+'" style="--sc:'+sv[2]+'" aria-label="Статус: '+sv[1]+'" title="'+sv[1]+'"></button>';
+    +(d>=45?'<div class="ap-d">'+esc(st?sname(st):"врач не указан")+'</div>':'')+(d>=60&&typeof a.type==="number"&&a.type>=0&&TYPES[a.type]?'<div class="ap-ty" title="Тип визита">'+esc(TYPES[a.type][0])+'</div>':'')+'<button type="button" class="stt" data-s="'+sv[0]+'" style="--sc:'+sv[2]+'" aria-label="Статус: '+sv[1]+'" title="'+sv[1]+'"></button>';
   if(chip)h+='<div class="ap-c'+(d>=150?' l3':d>=120?' l2':'')+'" title="'+esc(last.author)+'">'+esc(last.text)+(cs.length>1?' (+'+(cs.length-1)+')':'')+'</div>';
   else if(cs.length)h+='<div class="bub" title="Комментарии: '+cs.length+'">'+ICON+cs.length+'</div>';
   return h+'<div class="rz" aria-hidden="true"></div></div>'}
@@ -1162,12 +1172,80 @@ function stmOpen(btn){
   var m=document.createElement("div");m.id="stm";m.setAttribute("role","menu");
   m.innerHTML=STAT.map(function(x){return '<button type="button" role="menuitem" data-st="'+x[0]+'" aria-pressed="'+(statOf(a)[0]===x[0])+'" style="--sc:'+x[2]+'"><i></i>'+x[1]+'</button>'}).join("");
   document.body.appendChild(m);
-  var r=btn.getBoundingClientRect(),h=m.offsetHeight,top=r.bottom+6;if(top+h>innerHeight-8)top=Math.max(8,r.top-h-6);
-  m.style.top=top+"px";m.style.left=Math.max(8,Math.min(innerWidth-218,r.right-210))+"px";
+  var r=btn.getBoundingClientRect(),h=m.offsetHeight,w=m.offsetWidth||210,vw=document.documentElement.clientWidth||innerWidth,top=Math.max(8,Math.min(r.top-6,innerHeight-h-8)),left=r.left-w-8;if(left<8)left=r.right+8;if(left+w>vw-8)left=Math.max(8,vw-w-8);
+  m.style.top=top+"px";m.style.left=left+"px";
   m.addEventListener("click",function(ev){
     var b=ev.target.closest("[data-st]");if(!b)return;
     a.status=b.dataset.st==="plan"?undefined:b.dataset.st;save();stmClose();render()})}
 document.addEventListener("click",function(e){if($("stm")&&!e.target.closest("#stm")&&!e.target.closest(".stt"))stmClose()},true);
+
+/* ---------- перенос записи перетаскиванием ---------- */
+var DG=null;
+function dgClash(a,n){return appts.some(function(x){return x.id!==a.id&&x.date===n.date&&x.roomId===n.roomId&&x.status!=="cancel"&&x.start<n.start+n.dur&&n.start<x.start+x.dur})}
+function dgStop(){
+  var g=DG;if(!g)return;DG=null;clearTimeout(g.tm);cancelAnimationFrame(g.raf);clearTimeout(g.dw);
+  document.removeEventListener("pointermove",dgMove);document.removeEventListener("pointerup",dgUp);document.removeEventListener("pointercancel",dgCancel);
+  if(g.gh)g.gh.remove();if(g.el)g.el.classList.remove("dg-src");
+  document.body.classList.remove("dg-on");dgMark(null,null);return g}
+function dgMark(col,day){
+  [].forEach.call(document.querySelectorAll(".dg-prev"),function(n){n.remove()});
+  [].forEach.call(document.querySelectorAll(".day.dg-t"),function(n){n.classList.remove("dg-t")});
+  if(day)day.classList.add("dg-t")}
+function dgStart(){
+  var g=DG;if(!g||g.on)return;g.on=true;
+  var gh=g.el.cloneNode(true);gh.classList.add("dg-ghost");gh.style.width=g.w+"px";gh.style.height=g.h+"px";gh.style.top="0";gh.style.left="0";
+  document.body.appendChild(gh);g.gh=gh;g.el.classList.add("dg-src");document.body.classList.add("dg-on");
+  try{if(navigator.vibrate)navigator.vibrate(12)}catch(e){}
+  dgUpdate();
+  (function loop(){if(!DG||!DG.on)return;
+    var y=DG.y,vh=window.innerHeight;
+    if(y<90)window.scrollBy(0,-Math.ceil((90-y)/6));else if(y>vh-90)window.scrollBy(0,Math.ceil((y-(vh-90))/6));
+    dgUpdate();DG.raf=requestAnimationFrame(loop)})()}
+function dgUpdate(){
+  var g=DG;if(!g||!g.on)return;
+  g.gh.style.transform="translate("+(g.x-g.ox)+"px,"+(g.y-g.oy)+"px)";
+  var hit=document.elementFromPoint(g.x,g.y),a=g.a,T=null,col=null,day=null;
+  dgMark(null,null);
+  var nav=hit&&hit.closest("#prev,#next");
+  if(nav){if(!g.dw)g.dw=setTimeout(function(){g.dw=0;if(!DG)return;sel.setDate(sel.getDate()+(nav.id==="next"?7:-7));render()},700)}
+  else if(g.dw){clearTimeout(g.dw);g.dw=0}
+  col=hit&&hit.closest(".col");day=!col&&hit&&hit.closest(".day");
+  var lab=g.gh.querySelector(".ap-t");
+  if(col){
+    var cr=col.getBoundingClientRect(),m=S+Math.round(((g.y-g.oy)-cr.top)/PX/15)*15;m=Math.max(S,Math.min(E-a.dur,m));
+    T={date:ds(sel),roomId:col.dataset.rid,start:m,dur:a.dur};
+    var bad=dgClash(a,T),pv=document.createElement("div");pv.className="dg-prev"+(bad?" bad":"");pv.style.top=((m-S)*PX)+"px";pv.style.height=(a.dur*PX-2)+"px";pv.textContent=hm(m)+"–"+hm(m+a.dur);col.appendChild(pv);
+    T.bad=bad;if(lab)lab.textContent=hm(m)+"–"+hm(m+a.dur)}
+  else if(day){
+    T={date:day.dataset.d,roomId:a.roomId,start:a.start,dur:a.dur};T.bad=dgClash(a,T);day.classList.add("dg-t");if(lab)lab.textContent=fmtD(T.date)+(T.bad?" · занято":"")}
+  g.T=T}
+function dgMove(e){
+  var g=DG;if(!g||e.pointerId!==g.id)return;g.x=e.clientX;g.y=e.clientY;
+  if(!g.on){var dx=e.clientX-g.x0,dy=e.clientY-g.y0,d=Math.hypot(dx,dy);
+    if(g.touch){if(d>10)dgStop()}else if(d>6)dgStart();return}
+  e.preventDefault();dgUpdate()}
+function dgUp(e){
+  var g=DG;if(!g||e.pointerId!==g.id)return;
+  if(!g.on){dgStop();return}
+  dgUpdate();var T=g.T,id=g.a.id;dgStop();dragEnd=Date.now();
+  if(!T)return;
+  var a=appts.filter(function(x){return x.id===id})[0];if(!a)return;
+  if(T.date===a.date&&T.roomId===a.roomId&&T.start===a.start)return;
+  if(T.bad||dgClash(a,T)){toast("В это время кабинет занят");return}
+  a.date=T.date;a.roomId=T.roomId;a.start=T.start;save();render();
+  toast("Перенесено: "+fmtD(T.date)+", "+hm(T.start)+"–"+hm(T.start+a.dur))}
+function dgCancel(e){var g=DG;if(g&&e.pointerId===g.id){dgStop();if(g.on)dragEnd=Date.now()}}
+document.addEventListener("touchmove",function(e){if(DG&&DG.on&&e.cancelable)e.preventDefault()},{passive:false});
+document.addEventListener("contextmenu",function(e){if(DG)e.preventDefault()});
+$("body").addEventListener("pointerdown",function(e){
+  if((e.button||0)!==0||!can("appt_edit")||DG)return;
+  var el=e.target.closest(".ap");if(!el||e.target.closest(".stt,.rz,.rt"))return;
+  var a=appts.filter(function(x){return x.id==el.dataset.id})[0];if(!a)return;
+  var r=el.getBoundingClientRect();
+  var g={a:a,el:el,id:e.pointerId,x0:e.clientX,y0:e.clientY,x:e.clientX,y:e.clientY,ox:e.clientX-r.left,oy:e.clientY-r.top,w:r.width,h:r.height,touch:e.pointerType!=="mouse",on:false,tm:0,raf:0,dw:0,gh:null,T:null};
+  DG=g;
+  if(g.touch)g.tm=setTimeout(function(){if(DG===g)dgStart()},330);
+  document.addEventListener("pointermove",dgMove);document.addEventListener("pointerup",dgUp);document.addEventListener("pointercancel",dgCancel)});
 $("body").addEventListener("click",function(e){
   var sb=e.target.closest(".stt");if(sb){e.stopPropagation();stmOpen(sb);return}
   if(Date.now()-dragEnd<500||e.target.closest(".rz,.rt"))return;
@@ -1307,8 +1385,8 @@ $("mn-tiles").addEventListener("click",function(e){
   var b=e.target.closest("[data-mt]");if(!b||!MN)return;var a=MN,t=b.dataset.mt;mnClose();openCard(a);showTab(t)});
 
 /* --- перенос визита из мини-плашки: врач, кабинет, дата, время, тип --- */
-var PK=null;
-function pkClose(){$("pk").hidden=true;PK=null}
+var PK=null,PKX=null;
+function pkClose(){$("pk").hidden=true;PK=null;PKX=null}
 $("pk-x").onclick=$("pk-s").onclick=pkClose;
 function pkOpen(t){$("pk-t").textContent=t;$("pk").hidden=false}
 function mnMove(ch){
@@ -1317,27 +1395,34 @@ function mnMove(ch){
   var clash=appts.some(function(x){return x!==a&&x.date===n.date&&x.roomId===n.roomId&&x.status!=="cancel"&&x.start<n.start+n.dur&&n.start<x.start+x.dur});
   if(clash){toast("В это время кабинет занят");return false}
   for(var k in ch)a[k]=ch[k];save();render();openMini(a);return true}
+function pkApply(ch){
+  if(!PKX)return mnMove(ch);
+  var n={date:ch.date!==undefined?ch.date:PKX.date,start:ch.start!==undefined?ch.start:PKX.start,dur:ch.dur!==undefined?ch.dur:PKX.dur};
+  if(n.start<S||n.start+n.dur>E){toast("Время вне графика клиники ("+hm(S)+"–"+hm(E)+")");return false}
+  var clash=appts.some(function(x){return x.date===n.date&&x.roomId===PKX.roomId&&x.status!=="cancel"&&x.start<n.start+n.dur&&n.start<x.start+x.dur});
+  if(clash){toast("В это время кабинет занят");return false}
+  PKX.date=n.date;PKX.start=n.start;PKX.dur=n.dur;qbHead();return true}
 function pkList(title,items,cur,fn){
   pkOpen(title);$("pk-b").innerHTML=items.map(function(it){return'<button type="button" class="pk-opt" role="radio" aria-checked="'+(it.id===cur)+'" data-id="'+esc(String(it.id))+'">'+(it.ph||"")+'<span>'+esc(it.t)+'</span></button>'}).join("");
   $("pk-b").onclick=function(e){var b=e.target.closest(".pk-opt");if(!b)return;var it=items.filter(function(x){return String(x.id)===b.dataset.id})[0];if(it&&fn(it.id)!==false)pkClose()}}
 function pkCal(){
-  var q=MN.date.split("-"),y=+q[0],m=+q[1]-1,sel0=MN.date;
+  var X=PKX||MN,q=X.date.split("-"),y=+q[0],m=+q[1]-1,sel0=X.date;
   function draw(){
     var first=new Date(y,m,1),off=(first.getDay()+6)%7,days=new Date(y,m+1,0).getDate(),today=ds(new Date());
     var h='<div class="cal-n"><button type="button" data-n="-1" aria-label="Предыдущий месяц">‹</button><b>'+MONTHS[m]+' '+y+'</b><button type="button" data-n="1" aria-label="Следующий месяц">›</button></div><div class="cal-g">'+DN.map(function(d){return'<i>'+d+'</i>'}).join("");
     for(var i=0;i<off;i++)h+='<span></span>';
     for(var d=1;d<=days;d++){var k=y+"-"+p2(m+1)+"-"+p2(d);h+='<button type="button" data-d="'+k+'" class="'+(k===sel0?'sel':k===today?'cur':'')+'">'+d+'</button>'}
     $("pk-b").innerHTML=h+'</div>'}
-  pkOpen("Перенести на дату");draw();
+  pkOpen(PKX?"Дата записи":"Перенести на дату");draw();
   $("pk-b").onclick=function(e){var n=e.target.closest("[data-n]");if(n){m+=+n.dataset.n;if(m<0){m=11;y--}if(m>11){m=0;y++}draw();return}
-    var d=e.target.closest("[data-d]");if(!d)return;if(d.dataset.d===MN.date){pkClose();return}
-    var from=MN.date;if(mnMove({date:d.dataset.d})){pkClose();toast("Перенесено на "+fmtD(d.dataset.d))}}}
+    var d=e.target.closest("[data-d]");if(!d)return;if(d.dataset.d===X.date){pkClose();return}
+    if(pkApply({date:d.dataset.d})){var wasQ=!!PKX;pkClose();if(!wasQ)toast("Перенесено на "+fmtD(d.dataset.d))}}}
 function pkTime(){
-  var T={h:Math.floor(MN.start/60),m:MN.start%60,dur:MN.dur,mode:"h"};
+  var X=PKX||MN,T={h:Math.floor(X.start/60),m:X.start%60,dur:X.dur,mode:"h"};
   function draw(){
     var h='<div class="tm-h"><button type="button" data-m="h" class="'+(T.mode==="h"?"on":"")+'">'+p2(T.h)+'</button>:<button type="button" data-m="m" class="'+(T.mode==="m"?"on":"")+'">'+p2(T.m)+'</button></div><div class="dial" id="dial"><span class="ctr"></span>';
-    var n=12,list=[];
-    if(T.mode==="h"){for(var i=0;i<n;i++)list.push(9+i)}else{for(var j=0;j<n;j++)list.push(j*5)}
+    var n=T.mode==="h"?(E-S)/60:12,list=[];
+    if(T.mode==="h"){for(var i=0;i<n;i++)list.push(S/60+i)}else{for(var j=0;j<n;j++)list.push(j*5)}
     list.forEach(function(v,i){var ang=(i/n)*2*Math.PI-Math.PI/2,x=130+104*Math.cos(ang),y=130+104*Math.sin(ang);
       var on=T.mode==="h"?v===T.h:v===T.m,dis=T.mode==="h"&&(v*60<S||v*60>=E);
       h+='<button type="button" data-v="'+v+'" class="'+(on?"sel":"")+'" style="left:'+x+'px;top:'+y+'px"'+(dis?" disabled":"")+'>'+(T.mode==="h"?v:p2(v))+'</button>'});
@@ -1348,7 +1433,7 @@ function pkTime(){
     var b;if(b=e.target.closest("[data-m]")){T.mode=b.dataset.m;draw();return}
     if(b=e.target.closest("[data-v]")){if(T.mode==="h"){T.h=+b.dataset.v;T.mode="m"}else T.m=+b.dataset.v;draw();return}
     if(b=e.target.closest("[data-du]")){T.dur=+b.dataset.du;draw();return}
-    if(e.target.closest("[data-ok]")){var st=T.h*60+T.m;if(st===MN.start&&T.dur===MN.dur){pkClose();return}if(mnMove({start:st,dur:T.dur}))pkClose()}}}
+    if(e.target.closest("[data-ok]")){var st=T.h*60+T.m;if(st===X.start&&T.dur===X.dur){pkClose();return}if(pkApply({start:st,dur:T.dur}))pkClose()}}}
 $("mn-info").addEventListener("click",function(e){
   var b=e.target.closest("[data-f]");if(!b||!MN||!can("appt_edit"))return;var f=b.dataset.f;
   if(f==="doc"){var l=doctors().map(function(s){return{id:s.id,t:sname(s),ph:docPh(s)}});l.push({id:"",t:"Не указан"});
@@ -1364,9 +1449,13 @@ function qbOpen(rid,start){
   var next=appts.filter(function(a){return a.date===ds(sel)&&a.roomId===rid&&a.start>=start}).sort(function(x,y){return x.start-y.start})[0];
   var dur=Math.min(60,E-start,next?next.start-start:60);dur=Math.floor(dur/15)*15;
   if(dur<15){toast("Это время занято");return}
-  var rm=roomById(rid);QB={roomId:rid,start:start,dur:dur,docId:(ds0[idx]||ds0[0]||{}).id||null};
-  $("qb-sub").textContent=fmtD(ds(sel))+", "+hm(start)+"–"+hm(start+dur)+(rm?", "+rm.name:"");
+  var rm=roomById(rid);QB={roomId:rid,date:ds(sel),start:start,dur:dur,docId:(ds0[idx]||ds0[0]||{}).id||null};
+  qbHead();
   $("qb-q").value="";qbMode("main");qbDraw();$("qb").hidden=false;document.body.style.overflow="hidden";setTimeout(function(){$("qb-q").focus()},60)}
+function qbHead(){if(!QB)return;var rm=roomById(QB.roomId);
+  $("qb-sub").textContent=rm?rm.name+" · "+rm.clinic:"";
+  $("qb-date").querySelector("span").textContent=fmtD(QB.date);
+  $("qb-time").querySelector("span").textContent=hm(QB.start)+"–"+hm(QB.start+QB.dur)}
 function qbClose(){$("qb").hidden=true;QB=null;if($("card").hidden&&$("set").hidden&&$("rep").hidden)document.body.style.overflow=""}
 var qbAll=false;
 function qbMode(m){$("qb-main").hidden=m!=="main";$("qb-form").hidden=m!=="new";qbAll=false;$("qb-list").hidden=true}
@@ -1390,15 +1479,17 @@ $("qn-ok").onclick=function(){var nm=$("qn-name").value.trim();if(!nm){toast("В
   var p=mkP(nm);var ph=$("qn-phone").value.trim(),b=$("qn-birth").value;if(ph)p.phone=ph;if(b)p.birth=b;savePts();qbBook(p)};
 function qbBook(p){
   if(!QB)return;var Q=QB;
-  var rec={id:uid(),date:ds(sel),roomId:Q.roomId,start:Q.start,dur:Q.dur,pid:p.id,patient:p.name,docId:Q.docId,type:-1,comments:[]};
-  appts.push(rec);savePts();save();qbClose();render();toast("Записан: "+p.name+", "+hm(rec.start)+"–"+hm(rec.start+rec.dur))}
+  var rec={id:uid(),date:Q.date,roomId:Q.roomId,start:Q.start,dur:Q.dur,pid:p.id,patient:p.name,docId:Q.docId,type:-1,comments:[]};
+  appts.push(rec);savePts();save();qbClose();render();toast("Записан: "+p.name+(Q.date!==ds(sel)?", "+fmtD(Q.date):"")+", "+hm(rec.start)+"–"+hm(rec.start+rec.dur))}
 $("qb-q").addEventListener("input",function(){qbAll=false;qbDraw()});
 $("qb-q").addEventListener("keydown",function(e){if(e.key!=="Enter")return;var b=$("qb-list").querySelector("[data-id]");if(b)b.click();else qbNewOpen()});
 $("qb-list").addEventListener("click",function(e){
   var b=e.target.closest("button");if(!b||!QB)return;
   var p=byId(b.dataset.id);if(p)qbBook(p)});
 $("qb-close").onclick=$("qb-scrim").onclick=qbClose;
-$("qb-adv").onclick=function(){var Q=QB,nm=$("qb-q").value.trim();if(!Q)return;qbClose();pre={roomId:Q.roomId,start:Q.start};openCard(null);if(nm)$("v-pat").value=nm};
+$("qb-date").onclick=function(){if(QB){PKX=QB;pkCal()}};
+$("qb-time").onclick=function(){if(QB){PKX=QB;pkTime()}};
+$("qb-adv").onclick=function(){var Q=QB,nm=$("qb-q").value.trim();if(!Q)return;qbClose();if(Q.date!==ds(sel)){var qq=Q.date.split("-");sel=new Date(+qq[0],+qq[1]-1,+qq[2]);render()}pre={roomId:Q.roomId,start:Q.start};openCard(null);if(nm)$("v-pat").value=nm};
 function openCard(a){
   isNew=!a;cur=a;curP=a?byId(a.pid):null;phDate=null;
   var d=a?a.date:ds(sel),st=a?a.start:pre.start,rid=a?a.roomId:pre.roomId;
