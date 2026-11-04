@@ -51,7 +51,7 @@ button.danger{color:var(--danger)}
 .legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin:0 0 10px;font-size:13px;color:var(--mute)}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
 .board{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow-x:auto;box-shadow:0 1px 0 color-mix(in srgb,var(--navy) 8%,transparent)}
-.heads,.body{display:grid;grid-template-columns:44px repeat(var(--n,3),minmax(96px,1fr));min-width:calc(44px + var(--n,3) * 96px)}
+.heads,.body{display:grid;grid-template-columns:44px repeat(var(--n,3),minmax(var(--cw,96px),1fr));min-width:calc(44px + var(--n,3) * var(--cw,96px))}
 .heads{border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--cyan) 16%,var(--surface))}
 .heads div{padding:10px 6px;font-weight:600;text-align:center;font-size:14px;border-left:1px solid var(--line);color:var(--accent);min-width:0;overflow-wrap:anywhere}
 .heads div:first-child{border:0}
@@ -464,6 +464,19 @@ textarea{resize:vertical;min-height:60px}
 @keyframes lpfill{to{background-size:100% 100%}}
 body.pan{cursor:grabbing;-webkit-user-select:none;user-select:none}
 .col{cursor:default}
+.board.multi{--cw:72px}
+.board.multi .heads div:not(.h-sp):not(.dh){padding:5px 2px;font-size:12px;line-height:1.2}
+.board.multi .heads span{font-size:10.5px}.board.multi .heads span.hc{font-size:10px}
+.heads .dh{padding:6px 4px;font-size:13px;font-weight:700;border-left:2px solid var(--line);border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--navy) 9%,var(--surface));color:var(--accent)}
+.heads .dh.today{background:var(--accent);color:var(--accent-ink)}.heads .dh.sel:not(.today){box-shadow:inset 0 -3px 0 var(--accent)}
+.heads .h-sp{grid-row:span 2}
+.col.ds{border-left:2px solid var(--line)}
+.heads div.ds{border-left:2px solid var(--line)}
+.day.in:not(.sel){border-color:var(--accent)}
+.board.multi .times,.board.multi .heads .h-sp{position:sticky;left:0;z-index:4;background:var(--surface)}
+.board.multi .heads .h-sp{background:color-mix(in srgb,var(--cyan) 16%,var(--surface))}
+#lpm{position:fixed;z-index:35;display:flex;flex-direction:column;min-width:176px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 26px rgba(0,0,0,.3);padding:3px}
+#lpm button{min-height:38px;border:0;background:none;text-align:left;padding:0 12px;font-size:14px;border-radius:9px;color:var(--ink)}#lpm button+button{border-top:1px solid var(--line);border-radius:0 0 9px 9px}#lpm button:first-child{border-radius:9px 9px 0 0}
 .ap{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .dg-ghost{position:fixed!important;left:0!important;right:auto!important;margin:0!important;z-index:90;pointer-events:none;opacity:.94;box-shadow:0 12px 32px rgba(0,0,0,.38);outline:2px solid var(--accent)}
 .dg-src{opacity:.28}
@@ -524,7 +537,7 @@ body.dg-on{cursor:grabbing;-webkit-user-select:none;user-select:none}
 #t-treat .etiles{grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:6px}#t-treat .etile{min-height:56px;padding:4px 2px;font-size:11px}#t-treat .etile svg{width:46px;height:30px}
 .sz2{display:grid;grid-template-columns:1fr 1fr;gap:8px}#t-treat .sz2 input{min-height:40px}
 .quad{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:2px 0 6px}.quad button{min-height:52px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:inherit;font-size:14px}.quad button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink,#fff);border-color:var(--accent);font-weight:600}
-.clsw{display:flex;align-items:center;gap:8px;margin:2px 0 8px}.clsw label{margin:0;font-size:13px}.clsw select{flex:1;max-width:240px;min-height:40px}.rcl{width:100%;margin:-2px 0 10px}
+.clsw{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:2px 0 8px}.clsw label{margin:0;font-size:13px}.clsw select{flex:1;max-width:240px;min-height:40px}.rcl{width:100%;margin:-2px 0 10px}
 #auth{position:fixed;inset:0;z-index:500;background:var(--bg);overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:calc(24px + env(safe-area-inset-top,0px)) 16px 24px}#auth[hidden]{display:none}
 .auth-c{width:min(380px,100%);background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px 18px;margin-top:6vh}.auth-c h1{font-size:20px;margin:6px 0 10px;color:var(--accent)}.auth-logo{display:block;max-width:220px;margin:0 auto 6px}.auth-c label{display:block;font-size:13px;color:var(--mute);margin:12px 0 4px}.auth-c input{width:100%;min-height:46px}
 .auth-m{min-height:20px;margin:10px 0 2px;color:var(--danger);font-size:14px}.auth-h{color:var(--mute);font-size:14px;line-height:1.4}.auth-b{width:100%;min-height:48px;border-radius:12px;border:0;background:var(--accent);color:var(--accent-ink,#fff);font-weight:700;font-size:16px;margin-top:6px}.auth-l{width:100%;min-height:44px;border:0;background:transparent;color:var(--accent);font-size:15px;margin-top:6px}
@@ -560,7 +573,7 @@ body.dg-on{cursor:grabbing;-webkit-user-select:none;user-select:none}
       <button id="next" aria-label="Следующая неделя">›</button>
     </div>
   </div>
-  <div class="clsw"><label for="clinic-sw">Клиника</label><select id="clinic-sw" aria-label="Клиника"></select></div>
+  <div class="clsw"><label for="clinic-sw">Клиника</label><select id="clinic-sw" aria-label="Клиника"></select><label for="view-sw">Вид</label><select id="view-sw" aria-label="Сколько дней показывать"><option value="1">День</option><option value="3">3 дня</option><option value="5">5 дней (пн–пт)</option><option value="6">6 дней (пн–сб)</option><option value="7">Неделя</option></select></div>
   <div class="week" id="week"></div>
   <div class="board" id="board">
     <div class="heads" id="heads"></div>
@@ -1112,6 +1125,14 @@ appts.forEach(function(a){
 save();savePts();saveCfg();
 
 var sel=new Date();sel.setHours(0,0,0,0);
+var VD=(function(){var v=null;try{v=localStorage.getItem("ortho-days")}catch(e){}v=+v;if([1,3,5,6,7].indexOf(v)>-1)return v;return window.innerWidth>=1000?6:1})();
+function viewDays(){
+  if(VD===1)return[new Date(sel)];
+  var out=[],b=VD===3?new Date(sel):monday(sel);
+  for(var i=0;i<VD;i++){var d=new Date(b);d.setDate(b.getDate()+i);out.push(d)}
+  return out}
+function viewSw(){var e=document.getElementById("view-sw");if(!e)return;e.value=String(VD);
+  e.onchange=function(){VD=+e.value;try{localStorage.setItem("ortho-days",String(VD))}catch(x){}if(window.__applyZoom)window.__applyZoom();render()}}
 var cur=null,curP=null,isNew=false,pre=null,draft=[],tab="visit";
 function monday(d){var x=new Date(d);var w=(x.getDay()+6)%7;x.setDate(x.getDate()-w);return x}
 
@@ -1131,25 +1152,29 @@ function apHtml(a){
   return h+'<div class="rz" aria-hidden="true"></div></div>'}
 function render(){
   renderMe();
-  $("title").textContent=sel.toLocaleDateString("ru-RU",{day:"numeric",month:"long"})+", "+sel.toLocaleDateString("ru-RU",{weekday:"long"});
+  var DV=viewDays(),multi=DV.length>1,DS=DV.map(ds);
+  $("title").textContent=multi?DV[0].toLocaleDateString("ru-RU",{day:"numeric",month:"long"})+" – "+DV[DV.length-1].toLocaleDateString("ru-RU",{day:"numeric",month:"long"}):sel.toLocaleDateString("ru-RU",{day:"numeric",month:"long"})+", "+sel.toLocaleDateString("ru-RU",{weekday:"long"});
   var mon=monday(sel),td=ds(new Date()),h="";
   for(var i=0;i<7;i++){var d=new Date(mon);d.setDate(mon.getDate()+i);
-    h+='<button class="day'+(ds(d)===ds(sel)?' sel':'')+(ds(d)===td?' today':'')+'" data-d="'+ds(d)+'"><small>'+DN[i]+'</small><b>'+d.getDate()+'</b></button>'}
+    h+='<button class="day'+(ds(d)===ds(sel)?' sel':'')+(ds(d)===td?' today':'')+(multi&&DS.indexOf(ds(d))>-1?' in':'')+'" data-d="'+ds(d)+'"><small>'+DN[i]+'</small><b>'+d.getDate()+'</b></button>'}
   $("week").innerHTML=h;
   var VR=visibleRooms(),VID=VR.map(function(r){return r.id});
-  var day=appts.filter(function(a){return a.date===ds(sel)&&VID.indexOf(a.roomId)>-1});
-  $("sum").textContent=day.length?day.length+" "+plural(day.length)+" на "+sel.toLocaleDateString("ru-RU",{day:"numeric",month:"long"}):"На этот день записей нет";
-  $("board").style.setProperty("--n",VR.length);
-  $("heads").innerHTML='<div></div>'+VR.map(function(r){var n=day.filter(function(a){return a.roomId===r.id}).length;return '<div>'+esc(r.name||"Без названия")+'<span class="hc">'+esc(r.clinic||"")+'</span><span>'+n+' '+plural(n)+'</span></div>'}).join("");
+  var day=appts.filter(function(a){return DS.indexOf(a.date)>-1&&VID.indexOf(a.roomId)>-1});
+  $("sum").textContent=day.length?day.length+" "+plural(day.length)+(multi?"":" на "+sel.toLocaleDateString("ru-RU",{day:"numeric",month:"long"})):(multi?"В эти дни записей нет":"На этот день записей нет");
+  $("board").style.setProperty("--n",VR.length*DV.length);$("board").classList.toggle("multi",multi);
+  var hd=multi?'<div class="h-sp"></div>'+DV.map(function(d,i){return '<div class="dh'+(ds(d)===td?' today':'')+(ds(d)===ds(sel)?' sel':'')+'" style="grid-column:span '+VR.length+'">'+DN[(d.getDay()+6)%7]+' '+d.toLocaleDateString("ru-RU",{day:"numeric",month:"short"}).replace(".","")+'</div>'}).join(""):'<div></div>';
+  DV.forEach(function(d,di){VR.forEach(function(r,ri){var n=day.filter(function(a){return a.roomId===r.id&&a.date===ds(d)}).length;
+    hd+='<div'+(multi&&ri===0?' class="ds"':'')+'>'+esc(r.name||"Без названия")+'<span class="hc">'+esc(r.clinic||"")+'</span>'+(multi?'':'<span>'+n+' '+plural(n)+'</span>')+'</div>'})});
+  $("heads").innerHTML=hd;
   var tl='<div class="times" style="height:'+((E-S)*PX)+'px">';
   for(var t=S;t<=E;t+=60)tl+='<div style="top:'+((t-S)*PX)+'px">'+hm(t)+'</div>';
   tl+='</div>';
   var cols="";
-  VR.forEach(function(r){
-    cols+='<div class="col" data-rid="'+r.id+'" style="height:'+((E-S)*PX)+'px">';
-    day.filter(function(a){return a.roomId===r.id}).forEach(function(a){cols+=apHtml(a)});
-    if(ds(sel)===td){var n=new Date(),nm=n.getHours()*60+n.getMinutes();if(nm>=S&&nm<=E)cols+='<div class="now" style="top:'+((nm-S)*PX)+'px"></div>'}
-    cols+='</div>'});
+  DV.forEach(function(dd){var dk=ds(dd);VR.forEach(function(r,ri){
+    cols+='<div class="col'+(multi&&ri===0?' ds':'')+'" data-rid="'+r.id+'" data-date="'+dk+'" style="height:'+((E-S)*PX)+'px">';
+    day.filter(function(a){return a.roomId===r.id&&a.date===dk}).forEach(function(a){cols+=apHtml(a)});
+    if(dk===td){var n=new Date(),nm=n.getHours()*60+n.getMinutes();if(nm>=S&&nm<=E)cols+='<div class="now" style="top:'+((nm-S)*PX)+'px"></div>'}
+    cols+='</div>'})});
   $("body").innerHTML=tl+cols;
 }
 var dragEnd=0;
@@ -1224,7 +1249,7 @@ function dgUpdate(){
   var lab=g.gh.querySelector(".ap-t");
   if(col){
     var cr=col.getBoundingClientRect(),m=S+Math.round(((g.y-g.oy)-cr.top)/(PX*g.z)/15)*15;m=Math.max(S,Math.min(E-a.dur,m));
-    T={date:ds(sel),roomId:col.dataset.rid,start:m,dur:a.dur};
+    T={date:col.dataset.date||ds(sel),roomId:col.dataset.rid,start:m,dur:a.dur};
     var bad=dgClash(a,T),pv=document.createElement("div");pv.className="dg-prev"+(bad?" bad":"");pv.style.top=((m-S)*PX)+"px";pv.style.height=(a.dur*PX-2)+"px";pv.textContent=hm(m)+"–"+hm(m+a.dur);col.appendChild(pv);
     T.bad=bad;if(lab)lab.textContent=hm(m)+"–"+hm(m+a.dur)}
   else if(day){
@@ -1259,14 +1284,25 @@ $("body").addEventListener("pointerdown",function(e){
   document.addEventListener("pointermove",dgMove);document.addEventListener("pointerup",dgUp);document.addEventListener("pointercancel",dgCancel)});
 
 /* ---------- запись по долгому нажатию, прокрутка перетаскиванием ---------- */
-var LPMS=1000,lpHint=0,LP=null;
+var LPMS=2000,lpHint=0,LP=null,lpmT=0;
 function lpSlot(col,y){var z=dgZoom(),r=col.getBoundingClientRect();return Math.max(S,Math.min(E-30,S+Math.floor((y-r.top)/(40*z))*30))}
 function lpStop(){var g=LP;if(!g)return;LP=null;clearTimeout(g.tm);if(g.ring)g.ring.remove();
   document.removeEventListener("pointermove",lpMove);document.removeEventListener("pointerup",lpUp);document.removeEventListener("pointercancel",lpUp);
   document.body.classList.remove("pan");return g}
-function lpFire(){var g=LP;if(!g||g.pan)return;var col=g.col,st=g.start;lpStop();dragEnd=Date.now();
+function lpmClose(){var m=$("lpm");if(m)m.remove()}
+function lpMenu(x,y,rid,st,dt){
+  lpmClose();var m=document.createElement("div");m.id="lpm";m.setAttribute("role","menu");
+  m.innerHTML='<button type="button" role="menuitem" data-a="new">Добавить пациента</button><button type="button" role="menuitem" data-a="visit">Создать визит</button>';
+  document.body.appendChild(m);lpmT=Date.now();
+  var z=dgZoom(),mr=m.getBoundingClientRect(),vw=document.documentElement.clientWidth||innerWidth;
+  var left=Math.max(8,Math.min(x-mr.width/2,vw-mr.width-8)),top=Math.max(8,Math.min(y+12,innerHeight-mr.height-8));
+  m.style.left=(left/z)+"px";m.style.top=(top/z)+"px";
+  m.addEventListener("click",function(e){var b=e.target.closest("[data-a]");if(!b)return;lpmClose();qbOpen(rid,st,dt);if(b.dataset.a==="new"&&QB)qbNewOpen()})}
+document.addEventListener("pointerdown",function(e){if($("lpm")&&Date.now()-lpmT>400&&!e.target.closest("#lpm"))lpmClose()},true);
+window.addEventListener("scroll",function(){if($("lpm")&&Date.now()-lpmT>400)lpmClose()},{passive:true});
+function lpFire(){var g=LP;if(!g||g.pan)return;var col=g.col,st=g.start,x=g.x,y=g.y;lpStop();dragEnd=Date.now();
   try{if(navigator.vibrate)navigator.vibrate(18)}catch(e){}
-  qbOpen(col.dataset.rid,st)}
+  lpMenu(x,y,col.dataset.rid,st,col.dataset.date)}
 function lpMove(e){var g=LP;if(!g||e.pointerId!==g.id)return;
   var dx=e.clientX-g.x,dy=e.clientY-g.y;
   if(g.touch){if(Math.hypot(e.clientX-g.x0,e.clientY-g.y0)>9){lpStop()}return}
@@ -1279,8 +1315,8 @@ $("body").addEventListener("pointerdown",function(e){
   if(LP||DG||!can("appt_edit"))return;
   var col=e.target.closest(".col");if(!col||e.target.closest(".ap"))return;
   var touch=e.pointerType!=="mouse",btn=touch?0:e.button;if(btn!==0&&btn!==2)return;
-  var st=lpSlot(col,e.clientY),z=dgZoom(),ring=document.createElement("div");ring.className="lp-ring";ring.style.top=((st-S)*PX)+"px";ring.style.animationDuration=LPMS+"ms";col.appendChild(ring);
-  var g={id:e.pointerId,touch:touch,btn:btn,col:col,start:st,x0:e.clientX,y0:e.clientY,x:e.clientX,y:e.clientY,pan:false,ring:ring,tm:setTimeout(lpFire,LPMS)};
+  var st=lpSlot(col,e.clientY);
+  var g={id:e.pointerId,touch:touch,btn:btn,col:col,start:st,x0:e.clientX,y0:e.clientY,x:e.clientX,y:e.clientY,pan:false,ring:null,tm:setTimeout(lpFire,LPMS)};
   LP=g;
   document.addEventListener("pointermove",lpMove,{passive:false});document.addEventListener("pointerup",lpUp);document.addEventListener("pointercancel",lpUp)});
 $("body").addEventListener("contextmenu",function(e){if(e.target.closest(".col"))e.preventDefault()});
@@ -1290,10 +1326,10 @@ $("body").addEventListener("click",function(e){
   var ap=e.target.closest(".ap");
   if(ap){openMini(appts.filter(function(a){return a.id==ap.dataset.id})[0]);return}
   var c=e.target.closest(".col");if(!c||!can("appt_edit"))return;
-  if(Date.now()-lpHint>20000){lpHint=Date.now();toast("Чтобы записать пациента, удерживайте пустое место")}});
+  if(Date.now()-lpHint>20000){lpHint=Date.now();toast("Чтобы записать пациента, удерживайте пустое место 2 секунды")}});
 $("week").addEventListener("click",function(e){var b=e.target.closest(".day");if(!b)return;var p=b.dataset.d.split("-");sel=new Date(+p[0],+p[1]-1,+p[2]);render()});
-$("prev").onclick=function(){sel.setDate(sel.getDate()-7);render()};
-$("next").onclick=function(){sel.setDate(sel.getDate()+7);render()};
+$("prev").onclick=function(){sel.setDate(sel.getDate()-(VD===3?3:7));render()};
+$("next").onclick=function(){sel.setDate(sel.getDate()+(VD===3?3:7));render()};
 
 /* ---------- Помощники для форм ---------- */
 function opts(el,arr,val){el.innerHTML=arr.map(function(x){return '<option value="'+esc(x[0])+'">'+esc(x[1])+'</option>'}).join("");el.value=val}
@@ -1363,7 +1399,7 @@ function initStrips(){
   strip("e-force",{items:["2 oz","3.5 oz","4.5 oz","6 oz","8 oz"],custom:1,ph:"Впишите силу"});
   strip("p-sess",{items:[],req:1})}
 initStrips();
-initClinicSw();
+initClinicSw();viewSw();
 
 /* ---------- Карта пациента ---------- */
 var phDate=null;
@@ -1481,12 +1517,13 @@ $("mn-info").addEventListener("click",function(e){
   else if(f==="type"){var l2=TYPES.map(function(t,i){return{id:i,t:t[0]}});pkList("Тип визита",l2,typeof MN.type==="number"?MN.type:-1,function(id){MN.type=id;save();render();openMini(MN)})}});
 
 var QB=null;
-function qbOpen(rid,start){
+function qbOpen(rid,start,dt){
+  var QD=dt||ds(sel);
   var rooms=cfg.rooms.map(function(r){return r.id}),ds0=doctors(),idx=Math.max(0,rooms.indexOf(rid));
-  var next=appts.filter(function(a){return a.date===ds(sel)&&a.roomId===rid&&a.start>=start}).sort(function(x,y){return x.start-y.start})[0];
+  var next=appts.filter(function(a){return a.date===QD&&a.roomId===rid&&a.start>=start}).sort(function(x,y){return x.start-y.start})[0];
   var dur=Math.min(60,E-start,next?next.start-start:60);dur=Math.floor(dur/15)*15;
   if(dur<15){toast("Это время занято");return}
-  var rm=roomById(rid);QB={roomId:rid,date:ds(sel),start:start,dur:dur,docId:(ds0[idx]||ds0[0]||{}).id||null};
+  var rm=roomById(rid);QB={roomId:rid,date:QD,start:start,dur:dur,docId:(ds0[idx]||ds0[0]||{}).id||null};
   qbHead();
   $("qb-q").value="";qbMode("main");qbDraw();$("qb").hidden=false;document.body.style.overflow="hidden";setTimeout(function(){$("qb-q").focus()},60)}
 function qbHead(){if(!QB)return;var rm=roomById(QB.roomId);
@@ -2991,8 +3028,9 @@ var ZOOMS=[["auto","Авто (по размеру окна)"],["0.8","80%"],["0.
 function zoomVal(){var z=null;try{z=localStorage.getItem("ortho-zoom")}catch(e){}return z||"auto"}
 function applyZoom(){var z=zoomVal(),f=1,w=window.innerWidth||1000;
   if(z==="auto"){f=w>=1000?Math.min(1.5,Math.max(1,w/1280)):1}else f=parseFloat(z)||1;
+  if(z==="auto"){var vd=0;try{vd=+localStorage.getItem("ortho-days")}catch(e){}if(vd>1||(!vd&&w>=1000))f=1}
   f=Math.round(f*100)/100;document.documentElement.style.zoom=f===1?"":String(f)}
-applyZoom();window.addEventListener("resize",function(){if(zoomVal()==="auto")applyZoom()});
+window.__applyZoom=applyZoom;applyZoom();window.addEventListener("resize",function(){if(zoomVal()==="auto")applyZoom()});
 var sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
 var S={user:null,prof:null,known:{appt:{},patient:{},expense:{},settings:{}},pending:{},timer:null,busy:false,ready:false,state:"ok",fails:0,started:false};
 function $(i){return document.getElementById(i)}
