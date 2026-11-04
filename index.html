@@ -464,7 +464,7 @@ textarea{resize:vertical;min-height:60px}
 @keyframes lpfill{to{background-size:100% 100%}}
 body.pan{cursor:grabbing;-webkit-user-select:none;user-select:none}
 .col{cursor:default}
-.board.multi{--cw:146px}
+.board.multi{--cw:190px}.board.multi .heads,.board.multi .body{min-width:calc(44px + var(--n,3) * var(--cw,96px))}
 .board.single{--cw:0px}
 .board.single .heads div:not(.h-sp):not(.dh){font-size:15px;padding:7px 6px}.board.single .heads span.hc{display:inline;margin-left:6px;font-size:12px}
 .titlerow h1{font-size:19px}.titlerow #sum{font-size:12px}
@@ -488,6 +488,10 @@ body.pan{cursor:grabbing;-webkit-user-select:none;user-select:none}
 .board.multi .heads .h-sp{background:color-mix(in srgb,var(--cyan) 16%,var(--surface))}
 #lpm{position:fixed;z-index:35;display:flex;flex-direction:column;min-width:176px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 26px rgba(0,0,0,.3);padding:3px}
 #lpm button{min-height:38px;border:0;background:none;text-align:left;padding:0 12px;font-size:14px;border-radius:9px;color:var(--ink)}#lpm button+button{border-top:1px solid var(--line);border-radius:0 0 9px 9px}#lpm button:first-child{border-radius:9px 9px 0 0}
+.hnav{position:fixed;top:50%;z-index:40;width:42px;height:64px;margin-top:-32px;border-radius:21px;border:1px solid var(--line);background:var(--surface);box-shadow:0 4px 16px rgba(0,0,0,.22);font-size:30px;line-height:1;color:var(--accent);padding:0;opacity:.92}.hnav[hidden]{display:none}.hnav:hover{opacity:1}#hnav-l{left:6px}#hnav-r{right:22px}
+#hbar{position:fixed;left:230px;right:84px;bottom:10px;z-index:40;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:6px 16px;box-shadow:0 4px 16px rgba(0,0,0,.2)}#hbar[hidden]{display:none}
+#hsl{display:block;width:100%;height:26px;margin:0;accent-color:var(--accent);cursor:pointer}
+@media (max-width:899px){.hnav,#hbar{display:none!important}}
 .ap{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .dg-ghost{position:fixed!important;left:0!important;right:auto!important;margin:0!important;z-index:90;pointer-events:none;opacity:.94;box-shadow:0 12px 32px rgba(0,0,0,.38);outline:2px solid var(--accent)}
 .dg-src{opacity:.28}
@@ -556,7 +560,7 @@ body.dg-on{cursor:grabbing;-webkit-user-select:none;user-select:none}
 .acc-s{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0 10px}.acc-s small{display:block;color:var(--mute);font-size:13px}
 .tm{border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:8px;background:var(--bg)}.tm.new{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}.tm select{margin-top:6px;width:100%}
 
-@media (min-width:1000px){.bar-in,.wrap{max-width:1400px}.card-body{max-width:900px}}
+@media (min-width:1000px){.bar-in,.wrap{max-width:none}.wrap{padding-left:20px;padding-right:20px}.card-body{max-width:900px}}
 </style>
 </head>
 <body>
@@ -713,6 +717,8 @@ body.dg-on{cursor:grabbing;-webkit-user-select:none;user-select:none}
   </aside>
 </div>
 <div class="pk" id="pk" hidden><div class="pk-s" id="pk-s"></div><div class="pk-p" role="dialog" aria-modal="true" aria-labelledby="pk-t"><div class="pk-h"><b id="pk-t"></b><button type="button" class="pk-x" id="pk-x" aria-label="Закрыть">×</button></div><div id="pk-b"></div></div></div>
+<button type="button" id="hnav-l" class="hnav" aria-label="Влево" hidden>‹</button><button type="button" id="hnav-r" class="hnav" aria-label="Вправо" hidden>›</button>
+<div id="hbar" hidden><input type="range" id="hsl" min="0" max="1000" value="0" aria-label="Прокрутка расписания влево и вправо"></div>
 <div id="toast" role="status" aria-live="polite" hidden></div>
 
 <!-- Настройки клиники -->
@@ -1144,7 +1150,7 @@ var VD=VW==="room"?1:+VW,RV=VW==="room",RID="";try{RID=localStorage.getItem("ort
 function viewDays(){
   if(VD===1)return[new Date(sel)];
   var out=[],b=VD===3?new Date(sel):monday(sel);
-  for(var i=0;i<VD;i++){var d=new Date(b);d.setDate(b.getDate()+i);out.push(d)}
+  for(var i=0;i<(VD===3?9:VD);i++){var d=new Date(b);d.setDate(b.getDate()+i);out.push(d)}
   return out}
 function viewSw(){var e=document.getElementById("view-sw");if(!e)return;e.value=VW;
   e.onchange=function(){VW=e.value;RV=VW==="room";VD=RV?1:+VW;try{localStorage.setItem("ortho-days",VW)}catch(x){}if(window.__applyZoom)window.__applyZoom();render()}}
@@ -1170,7 +1176,7 @@ function apHtml(a){
 function render(){
   renderMe();
   var DV=viewDays(),multi=DV.length>1,DS=DV.map(ds);
-  $("title").textContent=multi?DV[0].toLocaleDateString("ru-RU",{day:"numeric",month:"long"})+" – "+DV[DV.length-1].toLocaleDateString("ru-RU",{day:"numeric",month:"long"}):sel.toLocaleDateString("ru-RU",{day:"numeric",month:"long"})+", "+sel.toLocaleDateString("ru-RU",{weekday:"long"});
+  $("title").textContent=multi?DV[0].toLocaleDateString("ru-RU",{day:"numeric",month:"long"})+" – "+DV[Math.min(VD,DV.length)-1].toLocaleDateString("ru-RU",{day:"numeric",month:"long"}):sel.toLocaleDateString("ru-RU",{day:"numeric",month:"long"})+", "+sel.toLocaleDateString("ru-RU",{weekday:"long"});
   var mon=monday(sel),td=ds(new Date()),h="";
   for(var i=0;i<7;i++){var d=new Date(mon);d.setDate(mon.getDate()+i);
     h+='<button class="day'+(ds(d)===ds(sel)?' sel':'')+(ds(d)===td?' today':'')+(multi&&DS.indexOf(ds(d))>-1?' in':'')+'" data-d="'+ds(d)+'"><small>'+DN[i]+'</small><b>'+d.getDate()+'</b></button>'}
@@ -1196,6 +1202,7 @@ function render(){
     if(dk===td){var n=new Date(),nm=n.getHours()*60+n.getMinutes();if(nm>=S&&nm<=E)cols+='<div class="now" style="top:'+((nm-S)*PX)+'px"></div>'}
     cols+='</div>'})});
   $("body").innerHTML=tl+cols;
+  if(typeof hbarDay==="function"){hbarDay();hbarUpdate()}
 }
 var dragEnd=0;
 $("body").addEventListener("pointerdown",function(e){
@@ -1352,6 +1359,33 @@ $("body").addEventListener("contextmenu",function(e){if(e.target.closest(".col")
   document.addEventListener("keydown",function(e){if(!RV||(e.key!=="ArrowLeft"&&e.key!=="ArrowRight"))return;var a=document.activeElement;
     if(a&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName))return;if(busyUi())return;roomGo(e.key==="ArrowRight"?1:-1)});
   $("rtabs").addEventListener("click",function(e){var x=e.target.closest(".rt-b");if(!x)return;RID=x.dataset.rid;try{localStorage.setItem("ortho-rid",RID)}catch(er){}render()});
+})();
+
+/* ---------- ползунок и стрелки по бокам ---------- */
+var hLast="",hSet=false;
+function fitCw(){var bd=$("board");if(!bd||RV||VD<2)return;bd.style.removeProperty("--cw");
+  var n=(visibleRooms().length||1),per=Math.min(VD,3),w=bd.clientWidth-44-2;var cw=Math.max(110,Math.floor(w/(per*n)));bd.style.setProperty("--cw",cw+"px")}
+function hbarUpdate(){fitCw();
+  var bar=$("hbar"),l=$("hnav-l"),r=$("hnav-r"),bd=$("board"),sl=$("hsl");if(!bar)return;
+  var show=false;hSet=true;
+  if(RV){var all=visibleRooms();show=all.length>1;if(show){var i=0;all.forEach(function(x,k){if(x.id===RID)i=k});sl.min=0;sl.max=all.length-1;sl.step=1;sl.value=i}}
+  else{var mx=bd.scrollWidth-bd.clientWidth;show=mx>4;if(show){sl.min=0;sl.max=1000;sl.step=1;sl.value=Math.round(bd.scrollLeft/mx*1000)}}
+  hSet=false;bar.hidden=l.hidden=r.hidden=!show}
+function hbarDay(){
+  if(RV||VD<2){return}
+  var key=VW+"|"+ds(sel);if(key===hLast)return;hLast=key;
+  var bd=$("board"),c=bd.querySelector('.col[data-date="'+ds(sel)+'"]'),b=$("body");if(!c||!b)return;
+  var z=dgZoom();bd.scrollLeft=Math.max(0,(c.getBoundingClientRect().left-b.getBoundingClientRect().left-44*z)/z)}
+(function(){
+  var bd=$("board"),sl=$("hsl");
+  sl.addEventListener("input",function(){if(hSet)return;
+    if(RV){var all=visibleRooms(),n=all[+sl.value];if(n&&n.id!==RID){RID=n.id;try{localStorage.setItem("ortho-rid",RID)}catch(e){}render()}}
+    else{var mx=bd.scrollWidth-bd.clientWidth;bd.scrollLeft=(+sl.value)/1000*mx}});
+  bd.addEventListener("scroll",function(){if(!RV)hbarUpdate()},{passive:true});
+  window.addEventListener("resize",hbarUpdate);
+  function step(d){if(RV){roomGo(d);return}
+    var c=bd.querySelector(".col");if(!c)return;var w=c.getBoundingClientRect().width*(visibleRooms().length||1)/dgZoom();bd.scrollBy({left:d*w,behavior:"smooth"})}
+  $("hnav-l").onclick=function(){step(-1)};$("hnav-r").onclick=function(){step(1)}
 })();
 $("body").addEventListener("click",function(e){
   var sb=e.target.closest(".stt");if(sb){e.stopPropagation();stmOpen(sb);return}
