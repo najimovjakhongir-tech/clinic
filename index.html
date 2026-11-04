@@ -2899,6 +2899,8 @@ async function pull(force){
   try{
     var all=await fetchAll(),by={appt:[],patient:[],expense:[],settings:[]},kn={appt:{},patient:{},expense:{},settings:{}};
     all.forEach(function(r){if(by[r.kind]){by[r.kind].push(r.data);kn[r.kind][r.id]=stable(r.data)}});
+    var ph={};all.forEach(function(r){if(r.kind==="photo")ph[r.id]=r.data});
+    if(S.started)syncPhotos(ph);else S.phInit=ph;
     var changed=false;
     ["appt","patient","expense","settings"].forEach(function(kind){
       var a=stable(kn[kind]),b=stable(S.known[kind]);if(a!==b)changed=true});
@@ -2993,7 +2995,7 @@ async function enter(){
   $("auth").hidden=true;startApp()}
 function startApp(){
   var s=document.createElement("script");s.text=$("app-src").textContent;document.body.appendChild(s);
-  S.started=true;S.ready=true;resolveMe();
+  S.started=true;S.ready=true;resolveMe();installPhotoHooks();syncPhotos(S.phInit||{});
   if(window.applyPerms)window.applyPerms();if(window.renderMe)window.renderMe();if(window.render)window.render();
   if(S.prof.role==="chief"&&!Object.keys(S.known.settings).length){window.__sync("ortho-settings-v1",window.cfg);window.__sync("ortho-appts-v1",window.appts);window.__sync("ortho-patients-v1",window.patients);window.__sync("ortho-exp-v1",window.EXP)}
   setState("ok");
@@ -3001,8 +3003,84 @@ function startApp(){
   document.addEventListener("visibilitychange",function(){if(!document.hidden)pull(false)});
   window.addEventListener("online",function(){pull(false)})}
 function ok2(){return"ok"}
+/* ---------- фото: хранилище Supabase ---------- */
+var REV=lget("ortho-phrev")||{};function saveREV(){lset("ortho-phrev",REV)}
+function phPath(id){return String(id).replace(/[^A-Za-z0-9_.-]/g,"_")+".jpg"}
+function idbPut(store,rec){return window.idb().then(function(db){return new Promise(function(res,rej){var t=db.transaction(store,"readwrite");t.objectStore(store).put(rec);t.oncomplete=function(){res()};t.onerror=function(){rej(t.error)}})})}
+function idbDel(store,key){return window.idb().then(function(db){return new Promise(function(res,rej){var t=db.transaction(store,"readwrite");t.objectStore(store).delete(key);t.oncomplete=function(){res()};t.onerror=function(){rej(t.error)}})})}
+async function upBlob(id,blob,data){
+  var path=phPath(id);
+  var u=await sb.storage.from("photos").upload(path,blob,{upsert:true,contentType:"image/jpeg"});if(u.error)throw u.error;
+  data.id=id;data.path=path;
+  var r=await sb.from("records").upsert([{kind:"photo",id:id,clinic:CL[0],data:data,updated_at:new Date().toISOString()}],{onConflict:"kind,id"});if(r.error)throw r.error;
+  REV[id]=data.rev;saveREV()}
+async function delBlob(id){
+  try{await sb.storage.from("photos").remove([phPath(id)]);var r=await sb.from("records").delete().eq("kind","photo").eq("id",id);if(r.error)throw r.error;delete REV[id];saveREV()}catch(e){console.warn("delPhoto",e);toast2("Не удалось удалить фото на сервере")}}
+function failUp(e){console.warn("photo",e);toast2("Фото сохранено только на этом устройстве: нет связи с сервером")}
+function installPhotoHooks(){
+  var pp=window.photoPut,pd=window.photoDel,av=window.avTx;
+  window.photoPut=function(rec){rec.rev=Date.now();return pp(rec).then(function(r){upBlob(rec.id,rec.blob,{pid:rec.pid,date:rec.date,slot:rec.slot,rev:rec.rev}).catch(failUp);return r})};
+  window.photoDel=function(id){return pd(id).then(function(r){delBlob(id);return r})};
+  window.avTx=function(mode,fn){
+    if(mode!=="readwrite")return av(mode,fn);
+    var ops=[];
+    return av(mode,function(s){return fn({put:function(v){v.rev=Date.now();ops.push(["put",v]);return s.put(v)},delete:function(k){ops.push(["del",k]);return s.delete(k)}})}).then(function(r){
+      ops.forEach(function(o){
+        if(o[0]==="put")upBlob("av_"+o[1].pid,o[1].blob,{pid:o[1].pid,avatar:true,rev:o[1].rev}).catch(failUp);
+        else delBlob("av_"+o[1])});
+      return r})}}
+async function syncPhotos(map){
+  if(S.phBusy||!window.idb)return;S.phBusy=true;var chPh=false,chAv=false;
+  try{
+    var ids=Object.keys(map);
+    for(var i=0;i<ids.length;i++){
+      var id=ids[i],d=map[id];if(REV[id]===d.rev)continue;
+      var dl=await sb.storage.from("photos").download(d.path);if(dl.error){console.warn("dl",dl.error);continue}
+      if(d.avatar){await idbPut("avatars",{pid:d.pid,blob:dl.data,rev:d.rev});chAv=true}
+      else{await idbPut("photos",{id:d.id,pid:d.pid,date:d.date,slot:d.slot,blob:dl.data,rev:d.rev});chPh=true}
+      REV[id]=d.rev;saveREV()}
+    var gone=Object.keys(REV).filter(function(k){return !map[k]});
+    for(var j=0;j<gone.length;j++){
+      var g=gone[j];
+      if(g.indexOf("av_")===0){await idbDel("avatars",g.slice(3));chAv=true}else{await idbDel("photos",g);chPh=true}
+      delete REV[g];saveREV()}
+    if(chAv&&window.loadAvatars)window.loadAvatars();
+    if(chPh&&window.curP&&window.renderPhotos&&!document.getElementById("card").hidden)window.renderPhotos();
+    if(chAv||chPh){if(window.render&&!busyUi())window.render()}
+  }catch(e){console.warn("syncPhotos",e)}
+  S.phBusy=false}
 /* ---------- аккаунты в настройках ---------- */
-var TEAM=null;
+var TEAM=null,RST=null;
+var KINDS_OK=["appt","patient","expense","settings"];
+function restoreFile(e){
+  var f=e.target.files[0],m=$("acc-bkm"),c=$("acc-rc");if(!f)return;c.innerHTML="";RST=null;
+  var rd=new FileReader();
+  rd.onerror=function(){m.textContent="Не удалось прочитать файл"};
+  rd.onload=function(){
+    var j;try{j=JSON.parse(rd.result)}catch(x){m.textContent="Это не файл резервной копии: не читается";return}
+    if(!j||j.app!=="ortho-clinic"||!Array.isArray(j.records)){m.textContent="Это не файл резервной копии клиники";return}
+    var recs=j.records.filter(function(r){return r&&KINDS_OK.indexOf(r.kind)>-1&&r.id!=null&&r.data&&typeof r.data==="object"});
+    var cnt={};recs.forEach(function(r){cnt[r.kind]=(cnt[r.kind]||0)+1});
+    if(!cnt.settings){m.textContent="В файле нет настроек клиники, восстановление остановлено";return}
+    RST=recs;
+    var dt=j.exportedAt?new Date(j.exportedAt).toLocaleString("ru-RU"):"неизвестно";
+    m.textContent="";
+    c.innerHTML='<div class="tm new"><b>Восстановление из копии от '+esc(dt)+'</b><p class="hint">В файле: пациентов — '+(cnt.patient||0)+', записей — '+(cnt.appt||0)+', расходов — '+(cnt.expense||0)+'.<br><b>Все текущие данные клиники будут заменены данными из файла.</b> Сначала скачайте копию текущих данных.</p><button type="button" class="primary" id="rs-go">Заменить данные</button><button type="button" class="cmx txt" id="rs-no" style="margin-top:6px">Отмена</button></div>';
+    $("rs-no").onclick=function(){RST=null;c.innerHTML=""};
+    $("rs-go").onclick=doRestore};
+  rd.readAsText(f)}
+async function doRestore(){
+  if(!RST)return;var m=$("acc-bkm"),c=$("acc-rc"),recs=RST;c.innerHTML="";m.textContent="Восстанавливаю…";
+  try{
+    var cur=await fetchAll(),keep={};
+    var rows=recs.map(function(r){keep[r.kind+"|"+r.id]=1;return{kind:r.kind,id:String(r.id),clinic:clinicOf(r.kind,{data:r.data}),data:r.data,updated_at:new Date().toISOString()}});
+    for(var i=0;i<rows.length;i+=100){var u=await sb.from("records").upsert(rows.slice(i,i+100),{onConflict:"kind,id"});if(u.error)throw u.error}
+    var del={};cur.forEach(function(r){if(KINDS_OK.indexOf(r.kind)>-1&&!keep[r.kind+"|"+r.id]){(del[r.kind]=del[r.kind]||[]).push(r.id)}});
+    for(var k in del){for(var a=0;a<del[k].length;a+=100){var d=await sb.from("records").delete().eq("kind",k).in("id",del[k].slice(a,a+100));if(d.error)throw d.error}}
+    Object.keys(KM).forEach(function(k){try{localStorage.removeItem(k)}catch(e){}});
+    m.textContent="Готово: данные восстановлены. Страница перезагрузится…";
+    if(!window.__noReload)setTimeout(function(){location.reload()},1200)
+  }catch(e){m.textContent="Не удалось восстановить: "+(e.message||"ошибка")+". Данные на сервере могли измениться частично, повторите."}}
 async function backup(){
   var m=$("acc-bkm"),b=$("acc-bk");b.disabled=true;m.textContent="Готовлю копию…";
   try{
@@ -3024,9 +3102,9 @@ window.__renderAcc=function(){
   var box=$("acc-sess");if(!box)return;
   var chief=S.prof.role==="chief";
   box.innerHTML='<div class="acc-s"><div><b>'+esc(S.prof.name||"")+'</b><small>'+esc(S.user.email||"")+' · '+esc(ROLES[S.prof.role]||S.prof.role)+'</small></div><button type="button" class="cmx txt" id="acc-out">Выйти</button></div>'
-    +(chief?'<div class="fsh-h">Резервная копия</div><p class="hint">Выгружает пациентов, записи, платежи, расходы и настройки одним файлом. Фотографии в копию не входят. Делайте копию перед крупными изменениями.</p><button type="button" class="primary" id="acc-bk">Скачать резервную копию</button><div class="cmempty" id="acc-bkm" aria-live="polite"></div><div class="fsh-h">Сотрудники и доступ</div><p class="hint">Новый сотрудник сам регистрируется на странице входа. Здесь вы подтверждаете его, выбираете роль и привязываете к карточке врача или администратора.</p><div id="acc-team"><div class="cmempty">Загрузка…</div></div>':'');
+    +(chief?'<div class="fsh-h">Резервная копия</div><p class="hint">Выгружает пациентов, записи, платежи, расходы и настройки одним файлом. Фотографии в копию не входят. Делайте копию перед крупными изменениями.</p><button type="button" class="primary" id="acc-bk">Скачать резервную копию</button><button type="button" class="cmx txt" id="acc-rs" style="margin-top:8px">Восстановить из копии…</button><input type="file" id="acc-rf" accept=".json,application/json" hidden><div class="cmempty" id="acc-bkm" aria-live="polite"></div><div id="acc-rc"></div><div class="fsh-h">Сотрудники и доступ</div><p class="hint">Новый сотрудник сам регистрируется на странице входа. Здесь вы подтверждаете его, выбираете роль и привязываете к карточке врача или администратора.</p><div id="acc-team"><div class="cmempty">Загрузка…</div></div>':'');
   $("acc-out").onclick=signOut;
-  if(chief)$("acc-bk").onclick=backup;
+  if(chief){$("acc-bk").onclick=backup;$("acc-rs").onclick=function(){$("acc-rf").value="";$("acc-rf").click()};$("acc-rf").onchange=restoreFile}
   if(chief)loadTeam()};
 async function loadTeam(){
   var r=await sb.from("profiles").select("id,name,role").order("created_at");
