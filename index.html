@@ -89,6 +89,7 @@ background:color-mix(in srgb,var(--c) 42%,var(--surface));border:1px solid var(-
 .tabs button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
 .tabs button[aria-disabled="true"]{opacity:.4;cursor:not-allowed}
 .grp{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 12px 14px;margin-bottom:12px}
+.dtb{margin-top:10px}.grp.disc .n.neg{color:var(--danger)}
 .grp h3{margin:0 0 2px;font-size:16px;color:var(--accent)}
 .grp h4{margin:14px 0 6px;font-size:14px;font-weight:600}
 .grp .hint{margin:0 0 8px;font-size:13px;color:var(--mute)}
@@ -489,8 +490,8 @@ body.pan{cursor:grabbing;-webkit-user-select:none;user-select:none}
 #lpm{position:fixed;z-index:35;display:flex;flex-direction:column;min-width:176px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 26px rgba(0,0,0,.3);padding:3px}
 #lpm button{min-height:38px;border:0;background:none;text-align:left;padding:0 12px;font-size:14px;border-radius:9px;color:var(--ink)}#lpm button+button{border-top:1px solid var(--line);border-radius:0 0 9px 9px}#lpm button:first-child{border-radius:9px 9px 0 0}
 .hnav{position:fixed;top:50%;z-index:40;width:42px;height:64px;margin-top:-32px;border-radius:21px;border:1px solid var(--line);background:var(--surface);box-shadow:0 4px 16px rgba(0,0,0,.22);font-size:30px;line-height:1;color:var(--accent);padding:0;opacity:.92}.hnav[hidden]{display:none}.hnav:hover{opacity:1}#hnav-l{left:6px}#hnav-r{right:22px}
-#hbar{position:fixed;left:230px;right:84px;bottom:10px;z-index:40;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:6px 16px;box-shadow:0 4px 16px rgba(0,0,0,.2)}#hbar[hidden]{display:none}
-#hsl{display:block;width:100%;height:26px;margin:0;accent-color:var(--accent);cursor:pointer}
+#hbar{position:fixed;left:50%;width:min(420px,40vw);transform:translateX(-50%);bottom:4px;z-index:40;background:transparent;border:0;border-radius:8px;padding:0 4px;opacity:.35;transition:opacity .2s}#hbar:hover{opacity:.9}#hbar[hidden]{display:none}
+#hsl{display:block;width:100%;height:12px;margin:0;accent-color:var(--mute);cursor:pointer}
 @media (max-width:899px){.hnav,#hbar{display:none!important}}
 .ap{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .dg-ghost{position:fixed!important;left:0!important;right:auto!important;margin:0!important;z-index:90;pointer-events:none;opacity:.94;box-shadow:0 12px 32px rgba(0,0,0,.38);outline:2px solid var(--accent)}
@@ -1154,7 +1155,8 @@ function viewDays(){
   return out}
 function viewSw(){var e=document.getElementById("view-sw");if(!e)return;e.value=VW;
   e.onchange=function(){VW=e.value;RV=VW==="room";VD=RV?1:+VW;try{localStorage.setItem("ortho-days",VW)}catch(x){}if(window.__applyZoom)window.__applyZoom();render()}}
-function roomGo(d){var all=visibleRooms(),i=0;all.forEach(function(r,k){if(r.id===RID)i=k});var n=Math.max(0,Math.min(all.length-1,i+d));if(n===i||!all.length)return false;
+function roomGo(d){var all=visibleRooms(),i=0;all.forEach(function(r,k){if(r.id===RID)i=k});var n=Math.max(0,Math.min(all.length-1,i+d));if(!all.length)return false;
+  if(n===i){sel.setDate(sel.getDate()+(d>0?1:-1));n=d>0?0:all.length-1}
   RID=all[n].id;try{localStorage.setItem("ortho-rid",RID)}catch(e){}render();var b=$("body");b.classList.remove("swl","swr");void b.offsetWidth;b.classList.add(d>0?"swl":"swr");return true}
 var cur=null,curP=null,isNew=false,pre=null,draft=[],tab="visit";
 function monday(d){var x=new Date(d);var w=(x.getDay()+6)%7;x.setDate(x.getDate()-w);return x}
@@ -1311,7 +1313,7 @@ $("body").addEventListener("pointerdown",function(e){
   document.addEventListener("pointermove",dgMove);document.addEventListener("pointerup",dgUp);document.addEventListener("pointercancel",dgCancel)});
 
 /* ---------- запись по долгому нажатию, прокрутка перетаскиванием ---------- */
-var LPMS=2000,lpHint=0,LP=null,lpmT=0;
+var LPMS=500,lpHint=0,LP=null,lpmT=0;
 function lpSlot(col,y){var z=dgZoom(),r=col.getBoundingClientRect();return Math.max(S,Math.min(E-30,S+Math.floor((y-r.top)/(PX*30*z))*30))}
 function lpStop(){var g=LP;if(!g)return;LP=null;clearTimeout(g.tm);if(g.ring)g.ring.remove();
   document.removeEventListener("pointermove",lpMove);document.removeEventListener("pointerup",lpUp);document.removeEventListener("pointercancel",lpUp);
@@ -1384,7 +1386,7 @@ function hbarDay(){
   bd.addEventListener("scroll",function(){if(!RV)hbarUpdate()},{passive:true});
   window.addEventListener("resize",hbarUpdate);
   function step(d){if(RV){roomGo(d);return}
-    var c=bd.querySelector(".col");if(!c)return;var w=c.getBoundingClientRect().width*(visibleRooms().length||1)/dgZoom();bd.scrollBy({left:d*w,behavior:"smooth"})}
+    sel.setDate(sel.getDate()+d);hLast="";render()}
   $("hnav-l").onclick=function(){step(-1)};$("hnav-r").onclick=function(){step(1)}
 })();
 $("body").addEventListener("click",function(e){
@@ -1393,7 +1395,7 @@ $("body").addEventListener("click",function(e){
   var ap=e.target.closest(".ap");
   if(ap){openMini(appts.filter(function(a){return a.id==ap.dataset.id})[0]);return}
   var c=e.target.closest(".col");if(!c||!can("appt_edit"))return;
-  if(Date.now()-lpHint>20000){lpHint=Date.now();toast("Чтобы записать пациента, удерживайте пустое место 2 секунды")}});
+  if(Date.now()-lpHint>20000){lpHint=Date.now();toast("Чтобы записать пациента, удерживайте пустое место")}});
 $("week").addEventListener("click",function(e){var b=e.target.closest(".day");if(!b)return;var p=b.dataset.d.split("-");sel=new Date(+p[0],+p[1]-1,+p[2]);render()});
 $("heads").addEventListener("click",function(e){var h=e.target.closest(".dh");if(!h)return;
   if(VD>1&&h.dataset.d!==ds(sel)){var q=h.dataset.d.split("-");sel=new Date(+q[0],+q[1]-1,+q[2]);render();return}
@@ -2979,7 +2981,7 @@ function repData(){
   var acts=[],pays=[],exps=[];
   patients.forEach(function(p){
     planItems(p).forEach(function(i){if(i.status!=="done")return;var d=i.doneDate||i.date||"";
-      acts.push({d:d,pat:p.name||"Без имени",name:i.name||"Услуга",sub:i.label||"",sum:itemNet(i),doc:i.docId||docFor(p,d),quick:!!i.quick,cl:i.clinic||CLINICS[0]})});
+      acts.push({d:d,pat:p.name||"Без имени",name:i.name||"Услуга",sub:i.label||"",sum:itemNet(i),gross:itemGross(i),disc:itemDisc(i),doc:i.docId||docFor(p,d),quick:!!i.quick,cl:i.clinic||CLINICS[0]})});
     (p.payments||[]).forEach(function(x){var d=x.date||"";
       pays.push({d:d,pat:p.name||"Без имени",method:x.method||"Не указан",sum:num(x.amount),doc:x.docId||docFor(p,d),note:x.note||"",by:x.by,cl:x.clinic||CLINICS[0]})})});
   EXP.forEach(function(x){exps.push({id:x.id,d:x.date,cat:x.cat,note:x.note||"",sum:num(x.amount),doc:x.docId||null,cl:x.clinic||CLINICS[0]})});
@@ -2987,6 +2989,13 @@ function repData(){
   function ok(r){return r.d>=f&&r.d<=t&&(w==="all"||r.doc===w)&&(REP.clinic==="all"||r.cl===REP.clinic)}
   var by=function(a,b){return a.d<b.d?1:a.d>b.d?-1:0};
   return{acts:acts.filter(ok).sort(by),pays:pays.filter(ok).sort(by),exps:exps.filter(ok).sort(by)}}
+function discSum(D){
+  var o={acts:D.acts.length,gross:0,disc:0,net:0,paid:0,rows:[]},m={};
+  D.acts.forEach(function(x){o.gross+=x.gross;o.disc+=x.disc;o.net+=x.sum;
+    if(x.disc>0){var r=m[x.pat]=m[x.pat]||{pat:x.pat,gross:0,disc:0,net:0,paid:0};r.gross+=x.gross;r.disc+=x.disc;r.net+=x.sum}});
+  var pp={};D.pays.forEach(function(x){pp[x.pat]=(pp[x.pat]||0)+x.sum});
+  Object.keys(m).forEach(function(k){m[k].paid=pp[k]||0;o.paid+=m[k].paid;o.rows.push(m[k])});
+  o.rows.sort(function(a,b){return b.disc-a.disc});return o}
 function sumOf(l){return l.reduce(function(a,x){return a+x.sum},0)}
 function tblH(heads,rows,empty){
   if(!rows.length)return'<tbody><tr><td class="cmempty">'+empty+'</td></tr></tbody>';
@@ -3008,6 +3017,16 @@ function repRender(){
   var g=function(l,k){var m={};l.forEach(function(x){var q=k(x);m[q]=(m[q]||0)+x.sum});return Object.keys(m).map(function(q){return[q,m[q]]}).sort(function(a,b){return b[1]-a[1]})};
   var bt=function(title,rows){return'<div class="grp"><h3>'+title+'</h3>'+(rows.length?'<table>'+rows.map(function(r){return'<tr><td>'+esc(r[0])+'</td><td class="n">'+money(r[1])+'</td></tr>'}).join("")+'</table>':'<div class="cmempty">Нет данных</div>')+'</div>'};
   var brk="";
+  var dsc=discSum(D);
+  if(dsc.acts>0){
+    brk+='<div class="grp disc"><h3>Скидки</h3><table>'
+      +'<tr><td>Общая сумма без скидки</td><td class="n">'+money(dsc.gross)+'</td></tr>'
+      +'<tr><td>Скидки пациентам'+(dsc.gross>0?' ('+pctS(dsc.disc/dsc.gross*100)+')':'')+'</td><td class="n neg">'+(dsc.disc>0?'−':'')+money(dsc.disc)+'</td></tr>'
+      +'<tr><td><b>Итого со скидкой (к оплате)</b></td><td class="n"><b>'+money(dsc.net)+'</b></td></tr>'
+      +'<tr><td>Оплачено пациентами со скидкой</td><td class="n">'+money(dsc.paid)+'</td></tr></table>'
+      +(dsc.rows.length?'<table class="dtb"><tr><td><small>Пациент</small></td><td class="n"><small>Без скидки</small></td><td class="n"><small>Скидка</small></td><td class="n"><small>Со скидкой</small></td><td class="n"><small>Оплатил</small></td></tr>'
+        +dsc.rows.map(function(r){return'<tr><td>'+esc(r.pat)+'</td><td class="n">'+money(r.gross)+'</td><td class="n neg">−'+money(r.disc)+' <small>'+pctS(r.disc/r.gross*100)+'</small></td><td class="n">'+money(r.net)+'</td><td class="n">'+money(r.paid)+'</td></tr>'}).join("")+'</table>':'<div class="cmempty">Скидок в этом периоде не было</div>')
+      +'</div>'}
   if(REP.who==="all"){
     var dm={};D.acts.forEach(function(x){var k=dnm(x.doc);dm[k]=dm[k]||{a:0,p:0};dm[k].a+=x.sum});D.pays.forEach(function(x){var k=dnm(x.doc);dm[k]=dm[k]||{a:0,p:0};dm[k].p+=x.sum});
     var dr=Object.keys(dm).sort(function(a,b){return dm[b].a-dm[a].a});
@@ -3050,6 +3069,9 @@ $("rep-csv").onclick=async function(){
   D.acts.forEach(function(x){L.push(["",fmtD(x.d),x.pat,x.name,dnm(x.doc),"",x.sum].map(q).join(";"))});
   L.push("");L.push(["Расходы","Дата","Статья","Комментарий","Врач","","Сумма"].map(q).join(";"));
   D.exps.forEach(function(x){L.push(["",fmtD(x.d),x.cat,x.note,x.doc?dnm(x.doc):"Общий","",x.sum].map(q).join(";"))});
+  var ds_=discSum(D);L.push("");L.push(["Скидки","Пациент","Без скидки","Скидка","Процент","Со скидкой","Оплатил"].map(q).join(";"));
+  ds_.rows.forEach(function(r){L.push(["",r.pat,r.gross,r.disc,pctS(r.disc/r.gross*100),r.net,r.paid].map(q).join(";"))});
+  L.push(["Итого","",ds_.gross,ds_.disc,ds_.gross>0?pctS(ds_.disc/ds_.gross*100):"",ds_.net,ds_.paid].map(q).join(";"));
   var blob=new Blob(["\ufeff"+L.join("\r\n")],{type:"text/csv;charset=utf-8"}),name="otchet.csv";
   var dl=null;try{dl=window.claude&&await window.claude.use("downloads")}catch(e){}
   if(dl){try{await dl.save({filename:name,data:blob})}catch(e){if(!e||e.code!=="declined")toast("Не удалось сохранить файл")}return}
