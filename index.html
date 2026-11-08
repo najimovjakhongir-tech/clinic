@@ -284,6 +284,8 @@ input[type=range]{padding:0;border:0;background:transparent;accent-color:var(--n
 .evph{width:34px;height:34px;border-radius:50%;object-fit:cover;flex:none;margin:1px 6px 0 0;pointer-events:none}
 .cph{width:14px;height:14px;border-radius:50%;object-fit:cover;vertical-align:-3px;margin-right:3px;pointer-events:none}
 @media (min-width:900px){.cph{width:18px;height:18px;vertical-align:-4px}.evph{width:40px;height:40px}}
+.tdur.ghosty{background:transparent;border:1.5px dashed var(--line);color:var(--muted)}
+button.tdur{border:0;font-family:var(--display);cursor:pointer}
 .tdur{display:inline-block;vertical-align:4px;margin-left:8px;font-size:12px;font-weight:800;color:var(--navy);background:var(--sky-soft);border-radius:8px;padding:3px 8px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .dx{font-size:13.5px;margin-top:6px;line-height:1.4;white-space:pre-wrap}
 .dx b{color:var(--navy)}
@@ -626,9 +628,10 @@ const upErr=e=>toast(e?.code==="too_large"?"Не удалось загрузит
 let undoFn=null;
 function toast(t,undo){if(!/^(Введите|Выберите|Укажите|Впишите|Не удалось|Хранилище)/.test(t))return; undo=null; const el=$("#toast");undoFn=undo||null;el.innerHTML=esc(t)+(undo?'<button data-a="undo">Отменить</button>':"");el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>{el.hidden=true;undoFn=null},undo?6000:1800)}
 const clone=o=>JSON.parse(JSON.stringify(o));
+const startOf=p=>p.startDate||(p.visits||[]).map(v=>v.date).filter(d=>d&&d<=today()).sort()[0]||"";
 function duration(p){
-  const ds=(p.visits||[]).map(v=>v.date).filter(d=>d&&d<=today()).sort(); if(!ds.length)return null;
-  const [y,m,d]=ds[0].split("-").map(Number); const s=new Date(y,m-1,d), n=new Date();
+  const st=startOf(p); if(!st||st>today())return null;
+  const [y,m,d]=st.split("-").map(Number); const s=new Date(y,m-1,d), n=new Date();
   let months=(n.getFullYear()-s.getFullYear())*12+(n.getMonth()-s.getMonth()); if(n.getDate()<s.getDate())months--;
   if(months<1){const days=Math.max(0,Math.round((n-s)/864e5)); return days<7?days+" дн.":Math.floor(days/7)+" нед."}
   const yrs=Math.floor(months/12), mo=months%12;
@@ -695,7 +698,7 @@ const canTouch=v=>iAmOwner||canDo("others")||!v?.doctorId||v.doctorId===myDoc()?
 const canEditVisit=v=>canDo("edit")&&canTouch(v)&&(!v?.date||v.date>=today()||canDo("editOld"));
 const visP=p=>iAmOwner||canDo("seeAll")||(myDoc()&&p.doctorId===myDoc().id);
 const getMe=()=>{const d=myDoc(); if(d)return d.id; try{return iAmOwner?(localStorage.getItem(MEKEY)||""):""}catch(e){return ""}};
-const ACT_PERM={phdel:"editPatient",phava:"editPatient",nextm:"book",mnextm:"book",newv:"book",newa:"book",savev:"edit",savea:"book",status:"status",setst:"status",mcopy:"move",lppaste:"move",lpadd:"book",hpaste:"move",
+const ACT_PERM={tsave:"editPatient",treset:"editPatient",phdel:"editPatient",phava:"editPatient",nextm:"book",mnextm:"book",newv:"book",newa:"book",savev:"edit",savea:"book",status:"status",setst:"status",mcopy:"move",lppaste:"move",lpadd:"book",hpaste:"move",
   mdel:"del",delv:"del",dela:"del",delp:"delPatient",delp2:"delPatient",dela2:"del",delv2:"del",editplan:"plan",saveplan:"plan",newp:"patients",editp:"editPatient",savep:"editPatient",copyph:"seePhone",
   settings:"_owner",stats:"stats",anp:"stats",ant:"stats",pdf:"stats",anyp:"stats",anyn:"stats",newdoc:"_owner",editdoc:"_owner",savedoc:"_owner",deldoc:"_owner",approve:"_owner",reject:"_owner",unlink:"_owner",dperm:"_owner",dpall:"_owner",ownme:"_owner",trash:"_owner",restore:"_owner",bkdl:"_owner",bkpick:"_owner",bkgo:"_owner",bkx:"_owner"};
 const allowed=a=>{const k=ACT_PERM[a]; if(!k)return true; return k==="_owner"?iAmOwner:canDo(k)};
@@ -1108,7 +1111,7 @@ function patientView(p){
 </header>
   <div class="pgrid"><div class="pleft">
   <div class="phead"><label class="avaup" ${assetsNs&&canDo("editPatient")?'for="avafile"':""} aria-label="Фото пациента">${pAva(p,"big")}${assetsNs&&canDo("editPatient")?`<em>${ICON.cam}</em>`:""}</label>${assetsNs&&canDo("editPatient")?`<input type="file" id="avafile" accept="image/*" hidden>`:""}<div style="min-width:0">
-    <h1>${esc(p.name)}${p.example?'<span class="ex">пример</span>':""}${duration(p)?`<span class="tdur">лечение ${duration(p)}</span>`:""}</h1>
+    <h1>${esc(p.name)}${p.example?'<span class="ex">пример</span>':""}${duration(p)?`<button class="tdur" data-a="tstart" aria-label="Начало лечения">лечение ${duration(p)}</button>`:canDo("editPatient")?`<button class="tdur ghosty" data-a="tstart">+ начало лечения</button>`:""}</h1>
     ${p.phone&&canDo("seePhone")?`<div class="phrow"><span class="phnum">${esc(p.phone)}</span><a class="phbtn" href="tel:${esc(p.phone.replace(/[^+\d]/g,""))}">Позвонить</a></div>`:`<div class="sub">&nbsp;</div>`}
     ${docOf(p.doctorId)?`<div class="dx"><b>Лечащий врач:</b> ${docChip(p.doctorId)}</div>`:""}
     ${p.note?`<div class="dx"><b>Диагноз:</b> ${esc(p.note)}</div>`:""}
@@ -1265,6 +1268,12 @@ function drawSheetInner(){
     ${assetsNs?`<div class="actions" style="margin-top:0"><label class="btn sky" for="mefile" style="cursor:pointer;text-align:center">${docPhoto(d)?"Заменить моё фото":"Загрузить моё фото"}</label><input type="file" id="mefile" accept="image/*" hidden></div>`:""}
     <div class="block" style="margin-top:14px"><div class="bh"><b>Мои права</b></div>${PGROUPS.map(([g,items])=>`<div class="pgh">${g}</div>${items.map(([k,t])=>`<div class="dx">${permOf(d,k)?"✓":"—"} ${t}</div>`).join("")}`).join("")}<div class="nothing" style="margin-top:8px">Права меняет главный врач.</div></div>
     <div class="actions"><button class="btn ghost" data-a="signout">Выйти</button><button class="btn ghost" data-a="close">Закрыть</button></div>`;
+  } else if(sheet.kind==="ts"){const pp=patients.find(x=>x.id===sheet.pid); const auto=(pp.visits||[]).map(v=>v.date).filter(d=>d&&d<=today()).sort()[0]||"";
+    h=`${sh("Начало лечения","tsave")}
+    <div class="field"><label for="tsd">Дата начала лечения</label><input id="tsd" type="date" value="${esc(sheet.d)}" max="${today()}"></div>
+    <div class="dx" id="tsinfo">${sheet.d&&sheet.d<=today()?"Срок лечения: "+durFrom(sheet.d):""}</div>
+    <div class="dx" style="color:var(--muted);margin-top:6px">${pp.startDate?`Указано вручную.${auto?" По первому визиту было бы "+fmt(auto)+".":""}`:auto?"Сейчас считается по первому визиту: "+fmt(auto)+".":"Визитов ещё нет."}</div>
+    ${pp.startDate?`<div class="actions"><button class="btn ghost" data-a="treset">Считать по первому визиту</button></div>`:""}`;
   } else if(sheet.kind==="lpm"){
     h=`<h3>${dayTitle(sheet.d)}${sheet.h!=null?" · "+pad2(sheet.h)+":00":""}</h3>
     ${clip&&canDo("move")?`<button class="stopt" data-a="lppaste">Вставить: ${esc(clip?.name||"")}</button>`:""}<button class="stopt" data-a="lpadd">Добавить пациента</button>
@@ -1414,6 +1423,8 @@ document.addEventListener("change",async e=>{const t=e.target; if(!["avafile","p
       for(const f of files){const r=await uploadImg(f); const pp=patients.find(x=>x.id===pid); const pc=clone(pp); pc.photos=pc.photos||[];
         pc.photos.push({id:uid(),asset:r.id,date:today(),cat:""}); if(!pc.photo)pc.photo=r.id; await savePatient(pc)}}
   }catch(err){upErr(err); const busy=$("#phbusy"); if(busy)busy.hidden=true}});
+function durFrom(st){return duration({startDate:st})||"меньше дня"}
+document.addEventListener("input",e=>{if(e.target.id==="tsd"){const v=e.target.value, el=$("#tsinfo"); if(el)el.textContent=v&&v<=today()?"Срок лечения: "+durFrom(v):""}});
 function syncPlan(){if(!sheet||sheet.kind!=="plan")return; const pl=sheet.plan; pl.applLabs={...(pl.applLabs||{})};
   document.querySelectorAll("[data-al]").forEach(el=>pl.applLabs[el.dataset.al]=el.value.trim());
   document.querySelectorAll("[data-pk]").forEach(el=>pl[el.dataset.pk]=el.value);
@@ -1506,6 +1517,9 @@ document.addEventListener("click",e=>{
     case "cropflip": crop.flip=!crop.flip; drawCrop(); break;
     case "cropreset": Object.assign(crop,{rot:0,fine:0,z:1,x:0,y:0,flip:false}); drawSheet(); requestAnimationFrame(drawCrop); break;
     case "cropok": finishCrop(); break;
+    case "tstart":{const pp=patients.find(x=>x.id===view.pid); sheet={kind:"ts",pid:pp.id,d:startOf(pp)}; drawSheet(); break}
+    case "tsave":{const d=$("#tsd").value; const pp=patients.find(x=>x.id===sheet.pid); sheet=null; drawSheet(); const pc=clone(pp); if(d)pc.startDate=d; else delete pc.startDate; savePatient(pc); break}
+    case "treset":{const pp=patients.find(x=>x.id===sheet.pid); sheet=null; drawSheet(); const pc=clone(pp); delete pc.startDate; savePatient(pc); break}
     case "signout": window.appSignOut&&window.appSignOut(); break;
     case "clipx": clip=null; updClip(); break;
     case "editplan": sheet={kind:"plan",pid:p.id,plan:{...emptyPlan(),...clone(p.plan||{})}}; sheet.plan.screws=sheet.plan.screws.map(scrObj); drawSheet(); break;
