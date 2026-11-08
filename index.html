@@ -449,7 +449,7 @@ body:not([data-screen="list"]) .todaypill{display:none}
 <style>
 .authbox{position:fixed;inset:0;z-index:100;background:var(--bg);display:grid;place-items:center;padding:24px max(16px,env(safe-area-inset-left,0px)) 24px max(16px,env(safe-area-inset-right,0px));overflow:auto}
 .authcard{width:100%;max-width:380px;display:flex;flex-direction:column;gap:8px}
-.authlogo{width:96px;height:96px;border-radius:22px;align-self:center;margin-bottom:6px}
+.authlogo{width:100%;max-width:300px;height:auto;align-self:center;margin-bottom:10px;background:#fff;border-radius:16px;padding:10px 14px;box-sizing:border-box}
 .authcard h1{margin:0;text-align:center;font-size:26px;color:var(--navy)}
 .authsub{margin:0 0 12px;text-align:center;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .authcard label{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-top:6px}
@@ -461,9 +461,8 @@ body:not([data-screen="list"]) .todaypill{display:none}
 <body>
 <div id="auth" class="authbox" hidden>
   <form id="authform" class="authcard" autocomplete="on">
-    <img class="authlogo" src="icon-512.png" alt="">
+    <img class="authlogo" src="logo.png" alt="Jakhongir Najimov — Functional Orthodontics">
     <h1>Ortho CRM</h1>
-    <p class="authsub">Jakhongir Najimov · Functional Orthodontics</p>
     <label for="aemail">Почта</label><input id="aemail" type="email" autocomplete="username" required>
     <label for="apass">Пароль</label><input id="apass" type="password" autocomplete="current-password" minlength="6" required>
     <div id="authmsg" class="authmsg" hidden></div>
