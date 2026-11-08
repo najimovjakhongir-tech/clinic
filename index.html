@@ -592,7 +592,7 @@ const emptyPlan=()=>({brType:"",brJaw:"",brNote:"",appl:[],applOther:"",screws:[
 const alOn=pl=>!!(pl&&(pl.alLab||pl.alTotalU||pl.alTotalL||pl.alTotal||pl.aligners));
 const alTU=pl=>pl?.alTotalU||pl?.alTotal||"", alTL=pl=>pl?.alTotalL||pl?.alTotal||"";
 const FIXES=["Фиксация брекетов","Фиксация аппарата","Установка сплинта","Выдача элайнеров","Фиксация ретейнеров","Другое"];
-const EXAMS=["Консультация","Осмотр сплинта","Осмотр аппарата","Плановый осмотр после ортодонтии","Другое"];
+const EXAMS=["Консультация","Аксиография","Сканирование полости рта","Осмотр сплинта","Осмотр аппарата","Плановый осмотр после ортодонтии","Другое"];
 const OLD_EXAM="Плановый осмотр после снятия брекетов", NEW_EXAM="Плановый осмотр после ортодонтии";
 const fixApplName=v=>v.fixAppl==="Другое"?(v.fixApplOther||""):(v.fixAppl||"");
 const fixTxt=v=>v.fix==="Другое"?(v.fixOther||"Фиксация"):v.fix==="Фиксация аппарата"&&fixApplName(v)?"Фиксация аппарата · "+fixApplName(v):v.fix;
