@@ -286,6 +286,14 @@ input[type=range]{padding:0;border:0;background:transparent;accent-color:var(--n
 @media (min-width:900px){.cph{width:18px;height:18px;vertical-align:-4px}.evph{width:40px;height:40px}}
 .tdur.ghosty{background:transparent;border:1.5px dashed var(--line);color:var(--muted)}
 button.tdur{border:0;font-family:var(--display);cursor:pointer}
+.sexpick{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sexb{display:flex;align-items:center;justify-content:center;gap:8px;border:1.5px solid var(--line);background:var(--bg);color:var(--muted);border-radius:12px;padding:10px;font-weight:700;font-family:var(--display)}
+.sexb svg{width:24px;height:24px}
+.sexb.m.on{border-color:#2f7fd8;background:color-mix(in srgb,#2f7fd8 14%,var(--surface));color:#2f7fd8}
+.sexb.f.on{border-color:#d0457a;background:color-mix(in srgb,#d0457a 14%,var(--surface));color:#d0457a}
+.pinfo{display:flex;align-items:center;gap:6px;margin-top:4px;font-size:13.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.sexi{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%}
+.sexi svg{width:16px;height:16px}.sexi.m{color:#2f7fd8;background:color-mix(in srgb,#2f7fd8 14%,transparent)}.sexi.f{color:#d0457a;background:color-mix(in srgb,#d0457a 14%,transparent)}
 .tdur{display:inline-block;vertical-align:4px;margin-left:8px;font-size:12px;font-weight:800;color:var(--navy);background:var(--sky-soft);border-radius:8px;padding:3px 8px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .dx{font-size:13.5px;margin-top:6px;line-height:1.4;white-space:pre-wrap}
 .dx b{color:var(--navy)}
@@ -628,6 +636,10 @@ const upErr=e=>toast(e?.code==="too_large"?"Не удалось загрузит
 let undoFn=null;
 function toast(t,undo){if(!/^(Введите|Выберите|Укажите|Впишите|Не удалось|Хранилище)/.test(t))return; undo=null; const el=$("#toast");undoFn=undo||null;el.innerHTML=esc(t)+(undo?'<button data-a="undo">Отменить</button>':"");el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>{el.hidden=true;undoFn=null},undo?6000:1800)}
 const clone=o=>JSON.parse(JSON.stringify(o));
+const SEXI={m:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="14" r="5.5"/><path d="M14 10l6-6M15 4h5v5"/></svg>',f:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="9" r="5.5"/><path d="M12 14.5V22M8.5 18.5h7"/></svg>'};
+function ageOf(bd){if(!bd)return ""; const[y,m,d]=bd.split("-").map(Number); const n=new Date(); let a=n.getFullYear()-y; if(n.getMonth()+1<m||(n.getMonth()+1===m&&n.getDate()<d))a--;
+  if(a<1){let mo=(n.getFullYear()-y)*12+(n.getMonth()+1-m); if(n.getDate()<d)mo--; return Math.max(0,mo)+" мес."} const r=a%10,h=a%100; return a+" "+(r===1&&h!==11?"год":r>=2&&r<=4&&(h<12||h>14)?"года":"лет")}
+const sexPick=(pre,v)=>`<div class="field"><label>Пол</label><div class="sexpick"><button type="button" class="sexb m${v==="m"?" on":""}" data-a="${pre}sex" data-v="m" aria-label="Мужской">${SEXI.m}<span>Мужской</span></button><button type="button" class="sexb f${v==="f"?" on":""}" data-a="${pre}sex" data-v="f" aria-label="Женский">${SEXI.f}<span>Женский</span></button></div></div>`;
 const startOf=p=>p.startDate||(p.visits||[]).map(v=>v.date).filter(d=>d&&d<=today()).sort()[0]||"";
 function duration(p){
   const st=startOf(p); if(!st||st>today())return null;
@@ -1112,6 +1124,7 @@ function patientView(p){
   <div class="pgrid"><div class="pleft">
   <div class="phead"><label class="avaup" ${assetsNs&&canDo("editPatient")?'for="avafile"':""} aria-label="Фото пациента">${pAva(p,"big")}${assetsNs&&canDo("editPatient")?`<em>${ICON.cam}</em>`:""}</label>${assetsNs&&canDo("editPatient")?`<input type="file" id="avafile" accept="image/*" hidden>`:""}<div style="min-width:0">
     <h1>${esc(p.name)}${p.example?'<span class="ex">пример</span>':""}${duration(p)?`<button class="tdur" data-a="tstart" aria-label="Начало лечения">лечение ${duration(p)}</button>`:canDo("editPatient")?`<button class="tdur ghosty" data-a="tstart">+ начало лечения</button>`:""}</h1>
+    ${p.sex||p.birth?`<div class="pinfo">${p.sex?`<span class="sexi ${p.sex}" title="${p.sex==="m"?"Мужской":"Женский"}">${SEXI[p.sex]}</span>`:""}${p.birth?`<span>${ageOf(p.birth)} · ${fmt(p.birth)}</span>`:""}</div>`:""}
     ${p.phone&&canDo("seePhone")?`<div class="phrow"><span class="phnum">${esc(p.phone)}</span><a class="phbtn" href="tel:${esc(p.phone.replace(/[^+\d]/g,""))}">Позвонить</a></div>`:`<div class="sub">&nbsp;</div>`}
     ${docOf(p.doctorId)?`<div class="dx"><b>Лечащий врач:</b> ${docChip(p.doctorId)}</div>`:""}
     ${p.note?`<div class="dx"><b>Диагноз:</b> ${esc(p.note)}</div>`:""}
@@ -1202,7 +1215,7 @@ function patientOptions(){
   return `<option value="">${list.length?"Выберите пациента":"Никого не нашли"}</option>`+list.map(p=>`<option value="${p.id}"${p.id===cur?" selected":""}>${esc(p.name)}</option>`).join("");
 }
 function syncAppt(){if(!sheet||sheet.kind!=="a")return;const a=sheet.a;
-  a.pid=$("#ap")?.value??a.pid; a.date=$("#ad")?.value||a.date; a.time=$("#at")?.value??a.time; a.note=$("#ac")?.value??a.note; a.newName=$("#an")?.value??a.newName; a.status=$("#as")?.value??a.status; a.phone=$("#aph")?.value??a.phone; a.pnote=$("#apn")?.value??a.pnote; a.pdoc=$("#apdoc")?.value??a.pdoc; a.src=$("#asrc")?.value??a.src; a.srcd=$("#asrcd")?.value??a.srcd}
+  a.pid=$("#ap")?.value??a.pid; a.date=$("#ad")?.value||a.date; a.time=$("#at")?.value??a.time; a.note=$("#ac")?.value??a.note; a.newName=$("#an")?.value??a.newName; a.birth=$("#abd")?.value??a.birth; a.status=$("#as")?.value??a.status; a.phone=$("#aph")?.value??a.phone; a.pnote=$("#apn")?.value??a.pnote; a.pdoc=$("#apdoc")?.value??a.pdoc; a.src=$("#asrc")?.value??a.src; a.srcd=$("#asrcd")?.value??a.srcd}
 const sh=(t,act)=>`<div class="shead"><button class="sbtn" data-a="close" aria-label="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button><h3>${t}</h3><button class="sbtn ok" data-a="${act}" aria-label="Сохранить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17.5 19.5 7"/></svg></button></div>`;
 function drawSheet(){drawSheetInner(); permCss(); fillNames(); if(sheet?.kind==="crop")requestAnimationFrame(drawCrop);
   if(sheet?.kind==="v"&&!sheet.isNew){const orig=patients.find(x=>x.id===sheet.pid)?.visits?.find(x=>x.id===sheet.v.id); if(orig&&!canEditVisit(orig)){document.querySelectorAll('.sheet [data-a="savev"],.sheet [data-a="delv"]').forEach(b=>b.style.display="none"); document.querySelectorAll(".sheet input,.sheet select,.sheet textarea,.sheet .add,.sheet .x,.sheet .tg").forEach(el=>el.disabled=true)}}
@@ -1294,6 +1307,8 @@ function drawSheetInner(){
     ${sheet.isNew&&canDo("patients")?`<div class="seg"><button data-a="amode" data-m="new" class="${isNewP?"on":""}">Новый пациент</button><button data-a="amode" data-m="exist" class="${isNewP?"":"on"}">Из списка</button></div>`:""}
     ${isNewP?`<div class="field"><label for="an">Имя и фамилия</label><input id="an" value="${esc(a.newName)}" autocomplete="off"></div>
       <div class="field"><label for="aph">Телефон</label><input id="aph" type="tel" value="${esc(a.phone)}"></div>
+      <div class="field"><label for="abd">Дата рождения</label><input id="abd" type="date" value="${esc(a.birth||"")}" max="${today()}"></div>
+      ${sexPick("a",a.sex)}
       <div class="field"><label for="apdoc">Лечащий врач</label><select id="apdoc">${docOpts(a.pdoc??getMe())}</select></div>
       ${srcFields("a",a.src,a.srcd)}
       <div class="field"><label for="apn">Диагноз</label><textarea id="apn">${esc(a.pnote)}</textarea></div>`
@@ -1308,6 +1323,8 @@ function drawSheetInner(){
     h=`${sh(sheet.isNew?"Новый пациент":"Пациент","savep")}
     <div class="field"><label for="pn">Имя и фамилия</label><input id="pn" value="${esc(p.name)}"></div>
     <div class="field"><label for="pp">Телефон</label><input id="pp" type="tel" value="${esc(p.phone)}"></div>
+    <div class="field"><label for="pbd">Дата рождения</label><input id="pbd" type="date" value="${esc(p.birth||"")}" max="${today()}"></div>
+    ${sexPick("p",p.sex)}
     <div class="field"><label for="pdoc">Лечащий врач</label><select id="pdoc">${docOpts(p.doctorId)}</select></div>
     ${srcFields("p",p.source,p.sourceNote)}
     <div class="field"><label for="pno">Диагноз</label><textarea id="pno">${esc(p.note)}</textarea></div>
@@ -1441,7 +1458,7 @@ document.addEventListener("input",e=>{if(e.target.id==="apf"&&sheet?.kind==="a")
   const opts=[...$("#ap").options].filter(o=>o.value); if(opts.length===1){$("#ap").value=opts[0].value;sheet.a.pid=opts[0].value}}});
 document.addEventListener("input",e=>{const t=e.target; if(!sheet||sheet.kind!=="v"||!t.dataset.k)return; sheet.v[t.dataset.k][+t.dataset.i][t.dataset.f]=t.value});
 document.addEventListener("change",e=>{const t=e.target;
-  if(t.dataset.src&&sheet){const pre=t.dataset.src; if(pre==="p"){const pp=sheet.p; pp.name=$("#pn")?.value??pp.name; pp.phone=$("#pp")?.value??pp.phone; pp.note=$("#pno")?.value??pp.note; pp.doctorId=$("#pdoc")?.value??pp.doctorId; pp.source=t.value; pp.sourceNote=$("#psrcd")?.value??pp.sourceNote} else {syncAppt()} drawSheet(); setTimeout(()=>$("#"+pre+"srcd")?.focus(),30); return}
+  if(t.dataset.src&&sheet){const pre=t.dataset.src; if(pre==="p"){const pp=sheet.p; pp.name=$("#pn")?.value??pp.name; pp.phone=$("#pp")?.value??pp.phone; pp.birth=$("#pbd")?.value??pp.birth; pp.note=$("#pno")?.value??pp.note; pp.doctorId=$("#pdoc")?.value??pp.doctorId; pp.source=t.value; pp.sourceNote=$("#psrcd")?.value??pp.sourceNote} else {syncAppt()} drawSheet(); setTimeout(()=>$("#"+pre+"srcd")?.focus(),30); return}
   if(t.id==="ownme"&&iAmOwner&&myId){const did=t.value; doctors.filter(x=>x.uid===myId&&x.id!==did).forEach(x=>saveDoctor({...x,uid:""})); const d=docOf(did); if(d)saveDoctor({...d,uid:myId,email:userNs?.email?.()||""}); return}
   if(sheet?.kind==="v"&&t.dataset.vsel){syncVisitFields(); drawSheet(); if(t.value==="Другое")setTimeout(()=>$("#"+t.id+"o")?.focus(),30); return}
   if(sheet?.kind==="v"&&t.dataset.arch){syncVisitFields(); drawSheet(); if(t.value==="__o")setTimeout(()=>$("#"+t.id+"c")?.focus(),30); return}
@@ -1520,6 +1537,9 @@ document.addEventListener("click",e=>{
     case "tstart":{const pp=patients.find(x=>x.id===view.pid); sheet={kind:"ts",pid:pp.id,d:startOf(pp)}; drawSheet(); break}
     case "tsave":{const d=$("#tsd").value; const pp=patients.find(x=>x.id===sheet.pid); sheet=null; drawSheet(); const pc=clone(pp); if(d)pc.startDate=d; else delete pc.startDate; savePatient(pc); break}
     case "treset":{const pp=patients.find(x=>x.id===sheet.pid); sheet=null; drawSheet(); const pc=clone(pp); delete pc.startDate; savePatient(pc); break}
+    case "psex":{const pp=sheet.p; pp.name=$("#pn")?.value??pp.name; pp.phone=$("#pp")?.value??pp.phone; pp.birth=$("#pbd")?.value??pp.birth; pp.note=$("#pno")?.value??pp.note; pp.doctorId=$("#pdoc")?.value??pp.doctorId; pp.source=$("#psrc")?.value??pp.source; pp.sourceNote=$("#psrcd")?.value??pp.sourceNote;
+      pp.sex=pp.sex===t.dataset.v?"":t.dataset.v; drawSheet(); break}
+    case "asex": syncAppt(); sheet.a.sex=sheet.a.sex===t.dataset.v?"":t.dataset.v; drawSheet(); break;
     case "signout": window.appSignOut&&window.appSignOut(); break;
     case "clipx": clip=null; updClip(); break;
     case "editplan": sheet={kind:"plan",pid:p.id,plan:{...emptyPlan(),...clone(p.plan||{})}}; sheet.plan.screws=sheet.plan.screws.map(scrObj); drawSheet(); break;
@@ -1558,7 +1578,7 @@ document.addEventListener("click",e=>{
     case "savea":{syncAppt(); const a=sheet.a; let pid=a.pid; const befores=[];
       if(!a.date){toast("Укажите дату");break}
       if(sheet.isNew&&sheet.mode==="new"){const nm=(a.newName||"").trim(); if(!nm){toast("Впишите имя и фамилию");$("#an")?.focus();break}
-        const pd=a.pdoc??getMe(); const np={id:uid(),name:nm,phone:(a.phone||"").trim(),note:(a.pnote||"").trim(),doctorId:pd||"",source:a.src||"",sourceNote:(a.srcd||"").trim(),visits:[{id:a.id,date:a.date,time:a.time||"",comment:(a.note||"").trim(),status:a.status||"plan",doctorId:pd||"",screws:[],elastics:[],bends:[]}]};
+        const pd=a.pdoc??getMe(); const np={id:uid(),name:nm,phone:(a.phone||"").trim(),birth:a.birth||"",sex:a.sex||"",note:(a.pnote||"").trim(),doctorId:pd||"",source:a.src||"",sourceNote:(a.srcd||"").trim(),visits:[{id:a.id,date:a.date,time:a.time||"",comment:(a.note||"").trim(),status:a.status||"plan",doctorId:pd||"",screws:[],elastics:[],bends:[]}]};
         sel=a.date; {const[y,m]=a.date.split("-").map(Number);cal={y,m:m-1}} sheet=null; drawSheet(); savePatient(np);
         toast("Добавлен на "+fmt(a.date)+(a.time?" в "+a.time:""),()=>{removePatientSilently(np.id);toast("Отменено")}); break}
       if(!pid){toast("Выберите пациента");break}
@@ -1576,7 +1596,7 @@ document.addEventListener("click",e=>{
     case "rm": syncVisitFields(); sheet.v[t.dataset.k].splice(+t.dataset.i,1); drawSheet(); break;
     case "delp": sheet.confirm=true; drawSheet(); break;
     case "noconf": sheet.confirm=false; drawSheet(); break;
-    case "savep":{const s=sheet.p; s.name=$("#pn").value.trim(); s.phone=$("#pp").value.trim(); s.note=$("#pno").value.trim(); s.doctorId=$("#pdoc")?.value||""; s.source=$("#psrc")?.value||""; s.sourceNote=($("#psrcd")?.value||"").trim();
+    case "savep":{const s=sheet.p; s.name=$("#pn").value.trim(); s.phone=$("#pp").value.trim(); s.birth=$("#pbd")?.value||""; s.note=$("#pno").value.trim(); s.doctorId=$("#pdoc")?.value||""; s.source=$("#psrc")?.value||""; s.sourceNote=($("#psrcd")?.value||"").trim();
       if(!s.name){$("#pn").focus();toast("Введите имя пациента");break}
       const base=patients.find(x=>x.id===s.id); const np={...(base||{}),...s,visits:base?base.visits:s.visits};
       const prevP=base?clone(base):null;
